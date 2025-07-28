@@ -1,0 +1,45 @@
+[project]
+name = "Bangumi-MCP"
+version = "0.1.0"
+description = "MCP server for Bangumi API"
+readme = {file = ["README.md", "README_zh.md"], content-type = "text/markdown"}
+authors = [
+    { name = "etherwindy", email = "1123725603@qq.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp>=1.12.2",
+    "python-dotenv>=1.1.1",
+    "starlette>=0.47.2",
+    "uvicorn>=0.35.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0"
+]
+
+[project.scripts]
+Bangumi-MCP = "bangumi_mcp.mcp_server:sse"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
