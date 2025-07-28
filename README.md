@@ -21,10 +21,12 @@ Bangumi MCP is a Model Context Protocol (MCP) server that provides access to the
 The Bangumi MCP server provides a comprehensive set of tools for interacting with the Bangumi API, including:
 
 ### Calendar and Time
+
 - `get_current_time`: Get the current time
 - `get_calendar`: Get the weekly broadcast schedule
 
 ### Subject (Anime, Manga, etc.) Tools
+
 - `search_subjects`: Search for subjects with various filters
 - `get_subjects`: Browse subjects by type and category
 - `get_subject_info`: Get detailed information about a specific subject
@@ -33,10 +35,12 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 - `get_subject_relations`: Get related subjects
 
 ### Episode Tools
+
 - `get_episodes`: Get episode information for a subject
 - `get_episode_info`: Get detailed information about a specific episode
 
 ### Character Tools
+
 - `search_characters`: Search for characters
 - `get_character_info`: Get detailed character information
 - `get_character_subjects`: Get subjects related to a character
@@ -44,6 +48,7 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 - `post_character_collection`: Collect a character
 
 ### Person Tools
+
 - `search_persons`: Search for persons (staff)
 - `get_person_info`: Get detailed person information
 - `get_person_subjects`: Get subjects related to a person
@@ -51,10 +56,12 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 - `post_person_collection`: Collect a person
 
 ### User Tools
+
 - `get_user_info`: Get user information
 - `get_me_info`: Get current user information
 
 ### Collection Tools
+
 - `get_user_collections`: Get user's subject collections
 - `get_user_collection_info`: Get user's collection info for a specific subject
 - `post_my_collection`: Collect a subject for the current user
@@ -70,12 +77,14 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 ## Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/etherwindy/Bangumi-MCP.git
    cd Bangumi-MCP
    ```
 
 2. Install the required dependencies:
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -118,6 +127,19 @@ By default, the server will run on `localhost:18080`. You can specify a differen
 
 ```bash
 python main.py --host 0.0.0.0 --port 8080
+```
+
+Config your MCP client application, for example:
+
+```json
+{
+   "mcpServers": {
+      "Bangumi-MCP": {
+         "type": "sse",
+         "url": "http://localhost:18080/sse"
+      }
+   }
+}
 ```
 
 ## Development
