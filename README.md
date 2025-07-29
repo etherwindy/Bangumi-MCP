@@ -25,7 +25,7 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 - `get_current_time`: Get the current time
 - `get_calendar`: Get the weekly broadcast schedule
 
-### Subject (Anime, Manga, etc.) Tools
+### Subject Tools
 
 - `search_subjects`: Search for subjects with various filters
 - `get_subjects`: Browse subjects by type and category
@@ -49,7 +49,7 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 
 ### Person Tools
 
-- `search_persons`: Search for persons (staff)
+- `search_persons`: Search for persons
 - `get_person_info`: Get detailed person information
 - `get_person_subjects`: Get subjects related to a person
 - `get_person_characters`: Get characters related to a person
@@ -65,10 +65,10 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 - `get_user_collections`: Get user's subject collections
 - `get_user_collection_info`: Get user's collection info for a specific subject
 - `post_my_collection`: Collect a subject for the current user
-- `get_my_episode_collections`: Get user's episode collections
-- `patch_my_episode_collections`: Update user's episode collection
-- `get_my_episode_collection_info`: Get user's episode collection info for a specific episode
-- `put_my_episode_collection_info`: Update user's episode collection
+- `get_my_episode_collections`: Get current user's episode collections
+- `patch_my_episode_collections`: Update current user's episode collection
+- `get_my_episode_collection_info`: Get current user's episode collection info for a specific episode
+- `put_my_episode_collection_info`: Update current user's episode collection
 - `get_user_character_collections`: Get user's character collections
 - `get_user_character_collection_info`: Get user's character collection info for a specific character
 - `get_user_person_collections`: Get user's person collections

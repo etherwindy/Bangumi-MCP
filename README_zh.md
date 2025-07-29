@@ -15,17 +15,19 @@
   一个可以访问 Bangumi API 的模型上下文协议（MCP）服务器
 </p>
 
-Bangumi MCP 是一个模型上下文协议（MCP）服务器，提供对 [Bangumi API](https://bangumi.github.io/api/) 的访问，允许用户搜索和获取有关动漫、漫画和其他相关内容的信息。
+Bangumi MCP 是一个模型上下文协议（MCP）服务器，提供对 [Bangumi API](https://bangumi.github.io/api/) 的访问，允许用户搜索和获取有关动画、漫画和其他相关内容的信息。
 
 ## 功能
 
 Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，包括：
 
 ### 日历和时间
+
 - `get_current_time`：获取当前时间
 - `get_calendar`：获取每周放送时间表
 
-### 条目（动画、漫画等）工具
+### 条目工具
+
 - `search_subjects`：搜索条目，支持多种过滤器
 - `get_subjects`：按类型和分类浏览条目
 - `get_subject_info`：获取特定条目的详细信息
@@ -34,10 +36,12 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
 - `get_subject_relations`：获取相关条目
 
 ### 剧集工具
+
 - `get_episodes`：获取条目的剧集信息
 - `get_episode_info`：获取特定剧集的详细信息
 
 ### 角色工具
+
 - `search_characters`：搜索角色
 - `get_character_info`：获取角色详细信息
 - `get_character_subjects`：获取与角色相关的条目
@@ -45,6 +49,7 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
 - `post_character_collection`：收藏角色
 
 ### 人员工具
+
 - `search_persons`：搜索人员
 - `get_person_info`：获取人员详细信息
 - `get_person_subjects`：获取与人员相关的条目
@@ -52,17 +57,19 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
 - `post_person_collection`：收藏人员
 
 ### 用户工具
+
 - `get_user_info`：获取用户信息
 - `get_me_info`：获取当前用户信息
 
 ### 收藏工具
+
 - `get_user_collections`：获取用户的条目收藏
 - `get_user_collection_info`：获取用户特定条目的收藏信息
 - `post_my_collection`：为当前用户收藏条目
-- `get_my_episode_collections`：获取用户的剧集收藏
-- `patch_my_episode_collections`：更新用户的剧集收藏
-- `get_my_episode_collection_info`：获取用户特定剧集的收藏信息
-- `put_my_episode_collection_info`：更新用户的剧集收藏
+- `get_my_episode_collections`：获取当前用户的剧集收藏
+- `patch_my_episode_collections`：更新当前用户的剧集收藏
+- `get_my_episode_collection_info`：获取当前用户特定剧集的收藏信息
+- `put_my_episode_collection_info`：更新当前用户的剧集收藏
 - `get_user_character_collections`：获取用户的角色收藏
 - `get_user_character_collection_info`：获取用户特定角色的收藏信息
 - `get_user_person_collections`：获取用户的人员收藏
