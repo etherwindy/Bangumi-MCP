@@ -31,30 +31,30 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
 - `search_subjects`：搜索条目，支持多种过滤器
 - `get_subjects`：按类型和分类浏览条目
 - `get_subject_info`：获取特定条目的详细信息
-- `get_subject_persons`：获取条目的工作人员信息
+- `get_subject_persons`：获取条目的人物信息
 - `get_subject_characters`：获取条目的角色信息
 - `get_subject_relations`：获取相关条目
 
-### 剧集工具
+### 剧集/章节工具
 
-- `get_episodes`：获取条目的剧集信息
-- `get_episode_info`：获取特定剧集的详细信息
+- `get_episodes`：获取条目的剧集/章节信息
+- `get_episode_info`：获取特定剧集/章节的详细信息
 
 ### 角色工具
 
 - `search_characters`：搜索角色
 - `get_character_info`：获取角色详细信息
 - `get_character_subjects`：获取与角色相关的条目
-- `get_character_persons`：获取与角色相关的人员
+- `get_character_persons`：获取与角色相关的人物
 - `post_character_collection`：收藏角色
 
-### 人员工具
+### 人物工具
 
-- `search_persons`：搜索人员
-- `get_person_info`：获取人员详细信息
-- `get_person_subjects`：获取与人员相关的条目
-- `get_person_characters`：获取与人员相关的角色
-- `post_person_collection`：收藏人员
+- `search_persons`：搜索人物
+- `get_person_info`：获取人物详细信息
+- `get_person_subjects`：获取与人物相关的条目
+- `get_person_characters`：获取与人物相关的角色
+- `post_person_collection`：收藏人物
 
 ### 用户工具
 
@@ -66,24 +66,27 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
 - `get_user_collections`：获取用户的条目收藏
 - `get_user_collection_info`：获取用户特定条目的收藏信息
 - `post_my_collection`：为当前用户收藏条目
-- `get_my_episode_collections`：获取当前用户的剧集收藏
-- `patch_my_episode_collections`：更新当前用户的剧集收藏
-- `get_my_episode_collection_info`：获取当前用户特定剧集的收藏信息
-- `put_my_episode_collection_info`：更新当前用户的剧集收藏
+- `patch_my_collection`：为当前用户更新条目
+- `get_my_episode_collections`：获取当前用户的剧集/章节收藏
+- `patch_my_episode_collections`：更新当前用户的剧集/章节收藏
+- `get_my_episode_collection_info`：获取当前用户特定剧集/章节的收藏信息
+- `put_my_episode_collection_info`：更新当前用户的剧集/章节收藏
 - `get_user_character_collections`：获取用户的角色收藏
 - `get_user_character_collection_info`：获取用户特定角色的收藏信息
-- `get_user_person_collections`：获取用户的人员收藏
-- `get_user_person_collection_info`：获取用户特定人员的收藏信息
+- `get_user_person_collections`：获取用户的人物收藏
+- `get_user_person_collection_info`：获取用户特定人物的收藏信息
 
 ## 安装
 
 1. 克隆仓库：
+
    ```bash
    git clone https://github.com/etherwindy/Bangumi-MCP.git
    cd Bangumi-MCP
    ```
 
 2. 安装所需依赖：
+
    ```bash
    pip install -r requirements.txt
    ```

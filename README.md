@@ -30,7 +30,7 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 - `search_subjects`: Search for subjects with various filters
 - `get_subjects`: Browse subjects by type and category
 - `get_subject_info`: Get detailed information about a specific subject
-- `get_subject_persons`: Get staff information for a subject
+- `get_subject_persons`: Get person information for a subject
 - `get_subject_characters`: Get character information for a subject
 - `get_subject_relations`: Get related subjects
 
@@ -65,6 +65,7 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 - `get_user_collections`: Get user's subject collections
 - `get_user_collection_info`: Get user's collection info for a specific subject
 - `post_my_collection`: Collect a subject for the current user
+- `patch_my_collection`: Update a subject collection for the current user
 - `get_my_episode_collections`: Get current user's episode collections
 - `patch_my_episode_collections`: Update current user's episode collection
 - `get_my_episode_collection_info`: Get current user's episode collection info for a specific episode
