@@ -1860,7 +1860,7 @@
           "收藏"
         ],
         "summary": "新增或修改用户单个条目收藏",
-        "description": "修改条目收藏状态, 如果不存在则创建，如果存在则修改\n\n由于直接修改剧集/章节条目的完成度可能会引起意料之外效果，只能用于修改书籍类条目的完成度。\n\n方法的所有请求体字段均可选\n",
+        "description": "修改条目收藏状态, 如果不存在则创建，如果存在则修改\n\n由于直接修改剧集条目的完成度可能会引起意料之外效果，只能用于修改书籍类条目的完成度。\n\n方法的所有请求体字段均可选\n",
         "operationId": "postUserCollection",
         "parameters": [
           {
@@ -1922,7 +1922,7 @@
           "收藏"
         ],
         "summary": "修改用户单个收藏",
-        "description": "修改条目收藏状态\n\n由于直接修改剧集/章节条目的完成度可能会引起意料之外效果，只能用于修改书籍类条目的完成度。\n\nPATCH 方法的所有请求体字段均可选\n",
+        "description": "修改条目收藏状态\n\n由于直接修改剧集条目的完成度可能会引起意料之外效果，只能用于修改书籍类条目的完成度。\n\nPATCH 方法的所有请求体字段均可选\n",
         "operationId": "patchUserCollection",
         "parameters": [
           {
@@ -3450,7 +3450,7 @@
                 }
               },
               "staff": {
-                "description": "制作人物信息",
+                "description": "制作人员信息",
                 "type": "array",
                 "items": {
                   "allOf": [
@@ -4050,9 +4050,10 @@
           1,
           2,
           3,
-          4
+          4,
+          null
         ],
-        "type": "integer",
+        "type": ["integer", "null"],
         "description": "Blood type of a person. A, B, AB, O",
         "x-ms-enum": {
           "name": "BloodType",
@@ -4132,31 +4133,32 @@
             "description": "parsed from wiki, maybe null"
           },
           "blood_type": {
-            "type": "integer",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/BloodType"
-              }
-            ],
+            "type": ["integer", "null"],
+            "$ref": "#/components/schemas/BloodType",
             "description": "parsed from wiki, maybe null, `1, 2, 3, 4` for `A, B, AB, O`"
           },
           "birth_year": {
             "title": "Birth Year",
-            "type": "integer",
+            "type": ["integer", "null"],
             "description": "parsed from wiki, maybe `null`"
           },
           "birth_mon": {
             "title": "Birth Mon",
-            "type": "integer",
+            "type": ["integer", "null"],
             "description": "parsed from wiki, maybe `null`"
           },
           "birth_day": {
             "title": "Birth Day",
-            "type": "integer",
+            "type": ["integer", "null"],
             "description": "parsed from wiki, maybe `null`"
           },
           "stat": {
             "$ref": "#/components/schemas/Stat"
+          },
+          "nsfw": {
+            "title": "NSFW",
+            "type": "boolean",
+            "description": "是否 NSFW"
           }
         }
       },
@@ -4652,7 +4654,7 @@
           "ep": {
             "title": "Ep",
             "type": "number",
-            "description": "条目内的集数, 从`1`开始。非本篇剧集/章节的此字段无意义"
+            "description": "条目内的集数, 从`1`开始。非本篇剧集的此字段无意义"
           },
           "airdate": {
             "title": "Airdate",
@@ -6743,7 +6745,7 @@
         "schema": {
           "title": "Episode ID",
           "minimum": 1,
-          "description": "剧集/章节 ID",
+          "description": "剧集 ID",
           "type": "integer"
         },
         "name": "episode_id",
