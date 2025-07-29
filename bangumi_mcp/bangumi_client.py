@@ -60,7 +60,6 @@ class BangumiClient:
         Returns:
             Search results as a dictionary.
         """
-
         response = await self.client.post("/v0/search/subjects", json=params)
         
         return response.status_code, response.json()

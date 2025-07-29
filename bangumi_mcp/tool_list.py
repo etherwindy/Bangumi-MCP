@@ -1,4 +1,38 @@
 import mcp.types as types
+from typing import Dict, Any
+import json
+
+def resolve_json_schema() -> Dict[str, Any]:
+    schema = json.load(open("bangumi_mcp/dist.json", "r", encoding="utf-8"))
+    
+    def resolve_refs(obj, root_schema) -> Any:
+        if isinstance(obj, dict):
+            if '$ref' in obj:
+                # find and resolve $ref
+                ref_path = obj['$ref']
+                if ref_path.startswith('#/'):
+                    path_parts = ref_path[2:].split('/')
+                    resolved = root_schema
+                    for part in path_parts:
+                        resolved = resolved[part]
+                    return resolve_refs(resolved, root_schema)
+                return obj
+            else:
+                # recursively resolve all properties in the object
+                return {k: resolve_refs(v, root_schema) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            # recursively resolve all items in the list
+            return [resolve_refs(item, root_schema) for item in obj]
+        else:
+            return obj
+    
+    # resolve all $ref in the schema
+    resolved_schema = resolve_refs(schema, schema)
+    assert isinstance(resolved_schema, dict)
+    return resolved_schema
+
+json_schema = resolve_json_schema()
+
 
 tool_list = [
         types.Tool(
@@ -15,6 +49,45 @@ tool_list = [
             inputSchema={
                 "type": "object",
                 "properties": {}
+            },
+            outputSchema={
+                "type": "object",
+                "properties": {
+                    "calendar": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "weekday": {
+                                    "type": "object",
+                                    "properties": {
+                                        "en": {
+                                            "type": "string",
+                                            "example": "Mon"
+                                        },
+                                        "zh": {
+                                            "type": "string",
+                                            "example": "星期一"
+                                        },
+                                        "ja": {
+                                            "type": "string",
+                                            "example": "月曜日"
+                                        },
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "items": {
+                                    "type": "array",
+                                    "items": json_schema["components"]["schemas"]["Legacy_SubjectSmall"],
+                                    "description": "Subject items for the weekday"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         ),
         types.Tool(
@@ -98,7 +171,8 @@ tool_list = [
                     }
                 },
                 "required": ["keyword"]
-            }
+            },
+            outputSchema=json_schema["components"]["schemas"]["Paged_Subject"]
         ),
         types.Tool(
             name="get_subjects",
@@ -163,6 +237,13 @@ tool_list = [
                         "default": 0
                     }
                 }
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_Subject"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -177,6 +258,13 @@ tool_list = [
                     }
                 },
                 "required": ["subject_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Subject"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         #   types.Tool(
@@ -209,6 +297,21 @@ tool_list = [
                     }
                 },
                 "required": ["subject_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "related_persons": {
+                                "type": "array",
+                                "items": json_schema["components"]["schemas"]["RelatedPerson"]
+                            },
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -223,6 +326,21 @@ tool_list = [
                     }
                 },
                 "required": ["subject_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "related_characters": {
+                                "type": "array",
+                                "items": json_schema["components"]["schemas"]["RelatedCharacter"]
+                            },
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -237,6 +355,21 @@ tool_list = [
                     }
                 },
                 "required": ["subject_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "subject_relations": {
+                                "type": "array",
+                                "items": json_schema["components"]["schemas"]["v0_subject_relation"]
+                            },
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -266,6 +399,13 @@ tool_list = [
                     }
                 },
                 "required": ["subject_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_Episode"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -280,6 +420,13 @@ tool_list = [
                     }
                 },
                 "required": ["episode_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["EpisodeDetail"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -316,7 +463,14 @@ tool_list = [
                     }
                 },
                 "required": ["keyword"]
-            }
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_Character"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
+            },
         ),
         types.Tool(
             name="get_character_info",
@@ -330,6 +484,13 @@ tool_list = [
                     }
                 },
                 "required": ["character_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Character"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -344,6 +505,21 @@ tool_list = [
                     },
                 },
                 "required": ["character_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "related_subjects": {
+                                "type": "array",
+                                "items": json_schema["components"]["schemas"]["v0_RelatedSubject"]
+                            },
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -358,6 +534,21 @@ tool_list = [
                     }
                 },
                 "required": ["character_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "character_persons": {
+                                "type": "array",
+                                "items": json_schema["components"]["schemas"]["CharacterPerson"]
+                            },
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -372,6 +563,20 @@ tool_list = [
                     },
                 },
                 "required": ["character_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "info": {
+                                "type": "string",
+                            },
+                        }
+                    }
+                ]
             }
         ),
         #   暂时不可用
@@ -387,6 +592,20 @@ tool_list = [
         #               },
         #           },
         #           "required": ["character_id"]
+        #       },
+        #       outputSchema={
+        #           "type": "object",
+        #           "oneOf": [
+        #               json_schema["components"]["schemas"]["ErrorDetail"],
+        #               {
+        #                   "type": "object",
+        #                   "properties": {
+        #                       "info": {
+        #                           "type": "string",
+        #                       },
+        #                   }
+        #               }
+        #           ]
         #       }
         #   ),
         types.Tool(
@@ -423,7 +642,8 @@ tool_list = [
                     }
                 },
                 "required": ["keyword"]
-            }
+            },
+            outputSchema=json_schema["components"]["schemas"]["Paged_Person"]
         ),
         types.Tool(
             name="get_person_info",
@@ -437,6 +657,13 @@ tool_list = [
                     }
                 },
                 "required": ["person_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["PersonDetail"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -451,6 +678,21 @@ tool_list = [
                     },
                 },
                 "required": ["person_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "related_subjects": {
+                                "type": "array",
+                                "items": json_schema["components"]["schemas"]["v0_RelatedSubject"]
+                            },
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -465,6 +707,21 @@ tool_list = [
                     }
                 },
                 "required": ["person_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "related_characters": {
+                                "type": "array",
+                                "items": json_schema["components"]["schemas"]["PersonCharacter"]
+                            },
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -479,6 +736,20 @@ tool_list = [
                     },
                 },
                 "required": ["person_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "info": {
+                                "type": "string",
+                            },
+                        }
+                    }
+                ]
             }
         ),
         #   暂时不可用
@@ -494,6 +765,20 @@ tool_list = [
         #               },
         #           },
         #           "required": ["person_id"]
+        #       },
+        #       outputSchema={
+        #           "type": "object",
+        #           "oneOf": [
+        #               json_schema["components"]["schemas"]["ErrorDetail"],
+        #               {
+        #                   "type": "object",
+        #                   "properties": {
+        #                       "info": {
+        #                           "type": "string",
+        #                       },
+        #                   }
+        #               }
+        #           ]
         #       }
         #   ),
         types.Tool(
@@ -508,6 +793,13 @@ tool_list = [
                     }
                 },
                 "required": ["username"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["User"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -516,6 +808,13 @@ tool_list = [
             inputSchema={
                 "type": "object",
                 "properties": {}
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["User"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -557,6 +856,13 @@ tool_list = [
                     }
                 },
                 "required": ["username"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_UserCollection"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -575,6 +881,13 @@ tool_list = [
                     }
                 },
                 "required": ["username", "subject_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["UserSubjectCollection"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -612,9 +925,24 @@ tool_list = [
                 },
                 "required": ["subject_id"]
             },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "info": {
+                                "type": "string",
+                                "description": "操作结果信息"
+                            }
+                        }
+                    }
+                ]
+            }
         ),
         types.Tool(
-            name="post_my_collection",
+            name="patch_my_collection",
             description="为当前用户更新指定收藏条目",
             inputSchema={
                 "type": "object",
@@ -648,6 +976,21 @@ tool_list = [
                 },
                 "required": ["subject_id"]
             },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "info": {
+                                "type": "string",
+                                "description": "操作结果信息"
+                            }
+                        }
+                    }
+                ]
+            }
         ),
         types.Tool(
             name="get_my_episode_collections",
@@ -683,6 +1026,33 @@ tool_list = [
                     }
                 },
                 "required": ["subject_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "total": {
+                                "type": "integer",
+                                "description": "总记录数"
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "description": "每页记录数"
+                            },
+                            "offset": {
+                                "type": "integer",
+                                "description": "当前页偏移量"
+                            },
+                            "data": {
+                                "type": "array",
+                                "items": json_schema["components"]["schemas"]["UserEpisodeCollection"]
+                            }
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -708,6 +1078,21 @@ tool_list = [
                     },
                 },
                 "required": ["subject_id", "episode_id", "type"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "info": {
+                                "type": "string",
+                                "description": "操作结果信息"
+                            }
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -726,6 +1111,13 @@ tool_list = [
                     }
                 },
                 "required": ["subject_id", "episode_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["UserEpisodeCollection"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -744,6 +1136,21 @@ tool_list = [
                     },
                 },
                 "required": [ "episode_id", "type"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["ErrorDetail"],
+                    {
+                        "type": "object",
+                        "properties": {
+                            "info": {
+                                "type": "string",
+                                "description": "操作结果信息"
+                            }
+                        }
+                    }
+                ]
             }
         ),
         types.Tool(
@@ -758,6 +1165,13 @@ tool_list = [
                     },
                 },
                 "required": ["username"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_UserCharacterCollection"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -776,6 +1190,13 @@ tool_list = [
                     }
                 },
                 "required": ["username", "character_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["UserCharacterCollection"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -790,6 +1211,13 @@ tool_list = [
                     },
                 },
                 "required": ["username"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_UserPersonCollection"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
         ),
         types.Tool(
@@ -808,6 +1236,13 @@ tool_list = [
                     }
                 },
                 "required": ["username", "person_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["UserPersonCollection"],
+                    json_schema["components"]["schemas"]["ErrorDetail"]
+                ]
             }
-        ),
+        )
     ]
