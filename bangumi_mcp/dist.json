@@ -4050,10 +4050,9 @@
           1,
           2,
           3,
-          4,
-          null
+          4
         ],
-        "type": ["integer", "null"],
+        "type": "integer",
         "description": "Blood type of a person. A, B, AB, O",
         "x-ms-enum": {
           "name": "BloodType",
@@ -4133,23 +4132,27 @@
             "description": "parsed from wiki, maybe null"
           },
           "blood_type": {
-            "type": ["integer", "null"],
-            "$ref": "#/components/schemas/BloodType",
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BloodType"
+              }
+            ],
             "description": "parsed from wiki, maybe null, `1, 2, 3, 4` for `A, B, AB, O`"
           },
           "birth_year": {
             "title": "Birth Year",
-            "type": ["integer", "null"],
+            "type": "integer",
             "description": "parsed from wiki, maybe `null`"
           },
           "birth_mon": {
             "title": "Birth Mon",
-            "type": ["integer", "null"],
+            "type": "integer",
             "description": "parsed from wiki, maybe `null`"
           },
           "birth_day": {
             "title": "Birth Day",
-            "type": ["integer", "null"],
+            "type": "integer",
             "description": "parsed from wiki, maybe `null`"
           },
           "stat": {

@@ -4,6 +4,7 @@ from jsonschema import validate
 import mcp.types as types
 import json
 from .bangumi_client import BangumiClient
+from .utils import remove_null_items
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ async def search_subjects(arguments):
     """
     status_code, results = await bangumi_client.search_subjects(arguments)
 
-    return results
+    return remove_null_items(results)
 
 
 async def get_subjects(arguments):
@@ -54,7 +55,7 @@ async def get_subjects(arguments):
 
     status_code, results = await bangumi_client.get_subjects(arguments)
 
-    return results
+    return remove_null_items(results)
 
 
 async def get_subject_info(arguments):
@@ -71,7 +72,7 @@ async def get_subject_info(arguments):
     
     status_code, info = await bangumi_client.get_subject_info(subject_id)
 
-    return info
+    return remove_null_items(info)
 
 async def get_subject_image(arguments):
     """
@@ -95,12 +96,10 @@ async def get_subject_image(arguments):
 
 
     if status_code >= 400:
-        output = image
+        return image
     else:
         #output = f"![条目 {subject_id} 图片 ({type})]({image['url']})\n"
-        output = {"url": image["url"], "type": type}
-
-    return output
+        return {"url": image["url"], "type": type}
 
 
 async def get_subject_persons(arguments):
@@ -180,7 +179,7 @@ async def get_episodes(arguments):
     
     status_code, episodes = await bangumi_client.get_episodes(arguments)
 
-    return episodes
+    return remove_null_items(episodes)
 
 
 async def get_episode_info(arguments):
@@ -198,7 +197,7 @@ async def get_episode_info(arguments):
 
     status_code, info = await bangumi_client.get_episode_info(episode_id)
 
-    return info
+    return remove_null_items(info)
 
 
 #-------------------------角色-------------------------
@@ -208,7 +207,7 @@ async def search_characters(arguments):
     """
     status_code, results = await bangumi_client.search_characters(arguments)
 
-    return results
+    return remove_null_items(results)
 
 
 async def get_character_info(arguments):
@@ -226,7 +225,7 @@ async def get_character_info(arguments):
 
     status_code, info = await bangumi_client.get_character_info(character_id)
 
-    return info
+    return remove_null_items(info)
 
 
 async def get_character_subjects(arguments):
@@ -320,7 +319,7 @@ async def search_persons(arguments):
     """
     status_code, results = await bangumi_client.search_persons(arguments)
 
-    return results
+    return remove_null_items(results)
 
 
 async def get_person_info(arguments):
@@ -337,7 +336,7 @@ async def get_person_info(arguments):
 
     status_code, info = await bangumi_client.get_person_info(person_id)
 
-    return info
+    return remove_null_items(info)
 
 
 async def get_person_subjects(arguments):
@@ -435,7 +434,7 @@ async def get_user_info(arguments):
 
     status_code, info = await bangumi_client.get_user_info(username)
 
-    return info
+    return remove_null_items(info)
 
 
 async def get_me_info(arguments):
@@ -444,7 +443,7 @@ async def get_me_info(arguments):
     """
     status_code, info = await bangumi_client.get_me_info()
 
-    return info
+    return remove_null_items(info)
 
 
 #-------------------------收藏-------------------------
@@ -457,7 +456,7 @@ async def get_user_collections(arguments):
         params=params
     )
 
-    return results
+    return remove_null_items(results)
 
 
 async def get_user_collection_info(arguments):
@@ -481,7 +480,7 @@ async def get_user_collection_info(arguments):
 
     status_code, info = await bangumi_client.get_user_collection_info(username, subject_id)
 
-    return info
+    return remove_null_items(info)
 
 
 async def post_my_collection(arguments):
@@ -541,7 +540,7 @@ async def get_my_episode_collections(arguments):
 
     status_code, results = await bangumi_client.get_my_episode_collections(subject_id, params)
 
-    return results
+    return remove_null_items(results)
 
 
 async def patch_my_episode_collections(arguments):
@@ -595,7 +594,7 @@ async def get_my_episode_collection_info(arguments):
 
     status_code, info = await bangumi_client.get_my_episode_collection_info(episode_id)
 
-    return info
+    return remove_null_items(info)
 
 
 async def put_my_episode_collection_info(arguments):
@@ -642,7 +641,7 @@ async def get_user_character_collections(arguments):
 
     status_code, results = await bangumi_client.get_user_character_collections(username=username)
 
-    return results
+    return remove_null_items(results)
 
 
 async def get_user_character_collection_info(arguments):
@@ -666,7 +665,7 @@ async def get_user_character_collection_info(arguments):
 
     status_code, info = await bangumi_client.get_user_character_collection_info(username, character_id)
 
-    return info
+    return remove_null_items(info)
 
 
 async def get_user_person_collections(arguments):
@@ -683,7 +682,7 @@ async def get_user_person_collections(arguments):
 
     status_code, results = await bangumi_client.get_user_person_collections(username=username)
 
-    return results
+    return remove_null_items(results)
 
 
 async def get_user_person_collection_info(arguments):
@@ -707,4 +706,4 @@ async def get_user_person_collection_info(arguments):
 
     status_code, info = await bangumi_client.get_user_person_collection_info(username, person_id)
 
-    return info
+    return remove_null_items(info)

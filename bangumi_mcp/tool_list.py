@@ -1,38 +1,9 @@
 import mcp.types as types
 from typing import Dict, Any
 import json
+from .utils import resolve_json_schema
 
-def resolve_json_schema() -> Dict[str, Any]:
-    schema = json.load(open("bangumi_mcp/dist.json", "r", encoding="utf-8"))
-    
-    def resolve_refs(obj, root_schema) -> Any:
-        if isinstance(obj, dict):
-            if '$ref' in obj:
-                # find and resolve $ref
-                ref_path = obj['$ref']
-                if ref_path.startswith('#/'):
-                    path_parts = ref_path[2:].split('/')
-                    resolved = root_schema
-                    for part in path_parts:
-                        resolved = resolved[part]
-                    return resolve_refs(resolved, root_schema)
-                return obj
-            else:
-                # recursively resolve all properties in the object
-                return {k: resolve_refs(v, root_schema) for k, v in obj.items()}
-        elif isinstance(obj, list):
-            # recursively resolve all items in the list
-            return [resolve_refs(item, root_schema) for item in obj]
-        else:
-            return obj
-    
-    # resolve all $ref in the schema
-    resolved_schema = resolve_refs(schema, schema)
-    assert isinstance(resolved_schema, dict)
-    return resolved_schema
-
-json_schema = resolve_json_schema()
-
+json_schema = resolve_json_schema("bangumi_mcp/dist.json")
 
 tool_list = [
         types.Tool(
