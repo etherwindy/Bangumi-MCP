@@ -2,13 +2,14 @@
 name = "Bangumi-MCP"
 version = "0.1.0"
 description = "MCP server for Bangumi API"
-readme = {file = ["README.md", "README_zh.md"], content-type = "text/markdown"}
+readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
     { name = "etherwindy", email = "1123725603@qq.com" }
 ]
 requires-python = ">=3.10"
 dependencies = [
     "httpx>=0.28.1",
+    "jsonschema>=4.25.0",
     "mcp>=1.12.2",
     "python-dotenv>=1.1.1",
     "starlette>=0.47.2",
