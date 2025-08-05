@@ -5,10 +5,19 @@ import asyncio
 import argparse
 from bangumi_mcp.mcp_server import sse
 from bangumi_mcp.mcp_server import stdio
+from bangumi_mcp.mcp_server import streamableHTTP
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run MCP SSE-based server')
+    parser = argparse.ArgumentParser(description='Run MCP server')
     parser.add_argument('--host', default='localhost', help='Host to bind to')
     parser.add_argument('--port', type=int, default=18080, help='Port to listen on')
+    parser.add_argument('--mode', choices=['stdio', 'sse', 'streamable_http'], default='stdio', help='Mode to run the server in')
     args = parser.parse_args()
-    sse(host=args.host, port=args.port)
+    if args.mode == 'stdio':
+        asyncio.run(stdio())
+    elif args.mode == 'sse':
+        sse(host=args.host, port=args.port)
+    elif args.mode == 'streamableHTTP':
+        streamableHTTP(host=args.host, port=args.port)
+    else:
+        raise ValueError(f"Unknown mode: {args.mode}")
