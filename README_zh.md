@@ -93,11 +93,11 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
 
 ## 服务器配置
 
-Bangumi MCP 服务器需要 Bangumi API 令牌才能完全发挥功能。有两种方式配置此令牌：
+Bangumi MCP 服务器需要 Bangumi API 令牌才能完全发挥功能。如果使用 SSE 或者 streamable HTTP，你需要在服务启动前设置此令牌：
 
 ### 方法 1: 使用 .env 文件（推荐）
 
-在项目根目录下创建 `.env` 文件，并添加您的 Bangumi API 令牌：
+在项目根目录下创建 `.env` 文件，并添加你的 Bangumi API 令牌：
 
 ```env
 BANGUMI_API_TOKEN=your_api_token_here
@@ -119,16 +119,36 @@ set BANGUMI_API_TOKEN=your_api_token_here
 
 ## 使用方法
 
-启动 MCP 服务器：
+### STDIO
 
-```bash
-python main.py
+直接将 json 设置导入你的 MCP 客户端应用，如 cherry-studio:
+
+```json
+{
+    "mcpServers": {
+        "Bangumi-MCP": {
+            "command": "uv",
+            "args": [
+                "--directory",
+                "your_path_to_the_folder}/Bangmumi-MCP",
+                "run",
+                "main.py"
+            ],
+            "env": {
+                "BANGUMI_TOKEN": "your_token_here"
+            }
+        }
+    }
+}
 ```
 
-默认情况下，服务器将在 `localhost:18080` 上运行。您可以使用 `--host` 和 `--port` 参数指定不同的主机和端口：
+### SSE
+
+默认情况下，服务器将在 `localhost:18080` 上运行。可以使用 `--host` 和 `--port` 参数指定不同的主机和端口：
 
 ```bash
-python main.py --host 0.0.0.0 --port 8080
+cd Bangumi-MCP
+python main.py --mode=sse --host localhost --port 18080
 ```
 
 配置你的 MCP 客户端应用，例如：
@@ -139,6 +159,28 @@ python main.py --host 0.0.0.0 --port 8080
       "Bangumi-MCP": {
          "type": "sse",
          "url": "http://localhost:18080/sse"
+      }
+   }
+}
+```
+
+### Streamable HTTP
+
+默认情况下，服务器将在 `localhost:18080` 上运行。可以使用 `--host` 和 `--port` 参数指定不同的主机和端口：
+
+```bash
+cd Bangumi-MCP
+python main.py --mode=streamable_http --host localhost --port 18080
+```
+
+配置你的 MCP 客户端应用，例如：
+
+```json
+{
+   "mcpServers": {
+      "Bangumi-MCP": {
+         "type": "streamableHTTP",
+         "url": "http://localhost:18080/mcp"
       }
    }
 }

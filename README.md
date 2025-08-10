@@ -92,7 +92,7 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 
 ## Server Configuration
 
-The Bangumi MCP server requires a Bangumi API token for full functionality. There are two ways to configure this token:
+The Bangumi MCP server requires a Bangumi API token for full functionality. If you use SSE or streamable HTTP, you need to configure this token before the server starts:
 
 ### Method 1: Using a .env file (Recommended)
 
@@ -118,16 +118,36 @@ set BANGUMI_API_TOKEN=your_api_token_here
 
 ## Usage
 
-To start the MCP server:
+### STDIO
 
-```bash
-python main.py
+Directly import json config to your MCP client application like cherry-studio:
+
+```json
+{
+    "mcpServers": {
+        "Bangumi-MCP": {
+            "command": "uv",
+            "args": [
+                "--directory",
+                "your_path_to_the_folder}/Bangmumi-MCP",
+                "run",
+                "main.py"
+            ],
+            "env": {
+                "BANGUMI_TOKEN": "your_token_here"
+            }
+        }
+    }
+}
 ```
+
+### SSE
 
 By default, the server will run on `localhost:18080`. You can specify a different host and port using the `--host` and `--port` arguments:
 
 ```bash
-python main.py --host 0.0.0.0 --port 8080
+cd Bangumi-MCP
+python main.py --mode=sse --host localhost --port 18080
 ```
 
 Config your MCP client application, for example:
@@ -138,6 +158,28 @@ Config your MCP client application, for example:
       "Bangumi-MCP": {
          "type": "sse",
          "url": "http://localhost:18080/sse"
+      }
+   }
+}
+```
+
+### Streamable HTTP
+
+By default, the server will run on `localhost:18080`. You can specify a different host and port using the `--host` and `--port` arguments:
+
+```bash
+cd Bangumi-MCP
+python main.py --mode=streamable_http --host localhost --port 18080
+```
+
+Config your MCP client application, for example:
+
+```json
+{
+   "mcpServers": {
+      "Bangumi-MCP": {
+         "type": "streamableHTTP",
+         "url": "http://localhost:18080/mcp"
       }
    }
 }
