@@ -17,7 +17,7 @@ if __name__ == "__main__":
         asyncio.run(stdio())
     elif args.mode == 'sse':
         sse(host=args.host, port=args.port)
-    elif args.mode == 'streamableHTTP':
+    elif args.mode == 'streamable_http':
         streamableHTTP(host=args.host, port=args.port)
     else:
         raise ValueError(f"Unknown mode: {args.mode}")
