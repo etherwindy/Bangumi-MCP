@@ -179,7 +179,7 @@ python main.py --mode=streamable_http --host localhost --port 18080
 {
    "mcpServers": {
       "Bangumi-MCP": {
-         "type": "streamableHTTP",
+         "type": "streamableHttp",
          "url": "http://localhost:18080/mcp"
       }
    }

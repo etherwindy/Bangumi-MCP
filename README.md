@@ -178,7 +178,7 @@ Config your MCP client application, for example:
 {
    "mcpServers": {
       "Bangumi-MCP": {
-         "type": "streamableHTTP",
+         "type": "streamableHttp",
          "url": "http://localhost:18080/mcp"
       }
    }
