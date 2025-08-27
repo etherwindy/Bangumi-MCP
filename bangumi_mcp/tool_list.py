@@ -3,7 +3,7 @@ from typing import Dict, Any
 import json
 from .utils import resolve_json_schema
 
-json_schema = resolve_json_schema("bangumi_mcp/dist.json")
+json_schema = resolve_json_schema("dist.json")
 
 tool_list = [
         types.Tool(

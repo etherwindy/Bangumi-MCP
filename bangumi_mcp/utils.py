@@ -1,8 +1,16 @@
 import json
 from typing import Dict, Any, Union, List
+import os
+from pathlib import Path
 
 
 def resolve_json_schema(path) -> Dict[str, Any]:
+    # Handle both relative and absolute paths
+    if not os.path.isabs(path):
+        # For relative paths, resolve relative to this package
+        package_dir = Path(__file__).parent
+        path = package_dir / path
+
     schema = json.load(open(path, "r", encoding="utf-8"))
 
     def resolve_refs(obj, root_schema) -> Any:
@@ -25,7 +33,7 @@ def resolve_json_schema(path) -> Dict[str, Any]:
             return [resolve_refs(item, root_schema) for item in obj]
         else:
             return obj
-    
+
     # resolve all $ref in the schema
     resolved_schema = resolve_refs(schema, schema)
     assert isinstance(resolved_schema, dict)

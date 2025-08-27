@@ -8,10 +8,19 @@ authors = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "httpx>=0.28.1",
+    "httpx[socks]>=0.28.1",
     "jsonschema>=4.25.0",
     "mcp>=1.12.2",
     "python-dotenv>=1.1.1",
     "starlette>=0.47.2",
     "uvicorn>=0.35.0"
 ]
+
+[project.scripts]
+bangumi-mcp = "bangumi_mcp.__main__:main"
+
+[tool.setuptools.package-data]
+bangumi_mcp = ["*.json"]
+
+[tool.uv]
+dev-dependencies = []
