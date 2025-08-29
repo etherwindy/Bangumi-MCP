@@ -132,8 +132,8 @@ def streamableHTTP(host: str = 'localhost', port: int = 18080):
     session_manager = StreamableHTTPSessionManager(
         app=server,
         event_store=None,
-        json_response=True,
-        stateless=True
+        json_response=False,
+        stateless=False
     )
 
     async def handle_streamable_http(
@@ -156,7 +156,7 @@ def streamableHTTP(host: str = 'localhost', port: int = 18080):
     starlette_app = Starlette(
         debug=False,
         routes=[
-            Mount("/mcp", app=handle_streamable_http),
+            Mount("/mcp/", app=handle_streamable_http),
         ],
         lifespan=lifespan,
     )
