@@ -85,10 +85,12 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
    cd Bangumi-MCP
    ```
 
-2. 安装所需依赖：
+2. 安装包：
+
+   推荐使用 uv：
 
    ```bash
-   pip install -r requirements.txt
+   uv pip install -e .
    ```
 
 ## 服务器配置
@@ -130,9 +132,9 @@ set BANGUMI_API_TOKEN=your_api_token_here
             "command": "uv",
             "args": [
                 "--directory",
-                "your_path_to_the_folder}/Bangmumi-MCP",
+                "{your_path_to_the_folder}/Bangmumi-MCP",
                 "run",
-                "main.py"
+                "bangumi-mcp"
             ],
             "env": {
                 "BANGUMI_TOKEN": "your_token_here"
@@ -148,7 +150,7 @@ set BANGUMI_API_TOKEN=your_api_token_here
 
 ```bash
 cd Bangumi-MCP
-python main.py --mode=sse --host localhost --port 18080
+uv run bangumi-mcp --mode=sse --host localhost --port 18080
 ```
 
 配置你的 MCP 客户端应用，例如：
@@ -170,7 +172,7 @@ python main.py --mode=sse --host localhost --port 18080
 
 ```bash
 cd Bangumi-MCP
-python main.py --mode=streamable_http --host localhost --port 18080
+uv run bangumi-mcp --mode=streamable_http --host localhost --port 18080
 ```
 
 配置你的 MCP 客户端应用，例如：
@@ -180,7 +182,7 @@ python main.py --mode=streamable_http --host localhost --port 18080
    "mcpServers": {
       "Bangumi-MCP": {
          "type": "streamableHttp",
-         "url": "http://localhost:18080/mcp"
+         "url": "http://localhost:18080/mcp/"
       }
    }
 }

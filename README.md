@@ -84,10 +84,12 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
    cd Bangumi-MCP
    ```
 
-2. Install the required dependencies:
+2. Install the package:
+
+   It is recommaneded to use uv:
 
    ```bash
-   pip install -r requirements.txt
+   uv pip install -e .
    ```
 
 ## Server Configuration
@@ -129,9 +131,9 @@ Directly import json config to your MCP client application like cherry-studio:
             "command": "uv",
             "args": [
                 "--directory",
-                "your_path_to_the_folder}/Bangmumi-MCP",
+                "{your_path_to_the_folder}/Bangmumi-MCP",
                 "run",
-                "main.py"
+                "bangumi-mcp"
             ],
             "env": {
                 "BANGUMI_TOKEN": "your_token_here"
@@ -147,7 +149,7 @@ By default, the server will run on `localhost:18080`. You can specify a differen
 
 ```bash
 cd Bangumi-MCP
-python main.py --mode=sse --host localhost --port 18080
+uv run bangumi-mcp --mode=sse --host localhost --port 18080
 ```
 
 Config your MCP client application, for example:
@@ -169,7 +171,7 @@ By default, the server will run on `localhost:18080`. You can specify a differen
 
 ```bash
 cd Bangumi-MCP
-python main.py --mode=streamable_http --host localhost --port 18080
+uv run bangumi-mcp --mode=streamable_http --host localhost --port 18080
 ```
 
 Config your MCP client application, for example:
@@ -179,18 +181,10 @@ Config your MCP client application, for example:
    "mcpServers": {
       "Bangumi-MCP": {
          "type": "streamableHttp",
-         "url": "http://localhost:18080/mcp"
+         "url": "http://localhost:18080/mcp/"
       }
    }
 }
-```
-
-## Development
-
-To install development dependencies:
-
-```bash
-pip install -e ".[dev]"
 ```
 
 ## Acknowledgements
