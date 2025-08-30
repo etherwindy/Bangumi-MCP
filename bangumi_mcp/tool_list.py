@@ -1,7 +1,5 @@
 import mcp.types as types
-from typing import Dict, Any
-import json
-from .utils import resolve_json_schema
+from bangumi_mcp.utils import resolve_json_schema
 
 json_schema = resolve_json_schema("dist.json")
 

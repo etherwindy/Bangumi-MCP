@@ -2,9 +2,8 @@ import logging
 from datetime import datetime
 from jsonschema import validate
 import mcp.types as types
-import json
-from .bangumi_client import BangumiClient
-from .utils import remove_null_items
+from bangumi_mcp.bangumi_client import BangumiClient
+from bangumi_mcp.utils import remove_null_items
 
 
 logger = logging.getLogger(__name__)

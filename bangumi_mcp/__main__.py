@@ -3,9 +3,9 @@
 
 import asyncio
 import argparse
-from .mcp_server import sse
-from .mcp_server import stdio
-from .mcp_server import streamableHTTP
+from bangumi_mcp.mcp_server import sse
+from bangumi_mcp.mcp_server import stdio
+from bangumi_mcp.mcp_server import streamableHTTP
 
 def main():
     """Main entry point for the Bangumi MCP server."""
