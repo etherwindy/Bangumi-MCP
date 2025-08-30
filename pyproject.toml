@@ -10,10 +10,10 @@ requires-python = ">=3.10"
 dependencies = [
     "httpx[socks]>=0.28.1",
     "jsonschema>=4.25.0",
-    "mcp>=1.12.2",
+    "mcp",
     "python-dotenv>=1.1.1",
     "starlette>=0.47.2",
-    "uvicorn>=0.35.0"
+    "uvicorn>=0.35.0",
 ]
 
 [project.scripts]
