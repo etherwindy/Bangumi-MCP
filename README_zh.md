@@ -188,14 +188,6 @@ uv run bangumi-mcp --mode=streamable_http --host localhost --port 18080
 }
 ```
 
-## 开发
-
-安装开发依赖：
-
-```bash
-pip install -e ".[dev]"
-```
-
 ## 鸣谢
 
 本项目在构建过程中得到了 Qwen3-Coder 和 Claude Sonnet 4 的协助。
