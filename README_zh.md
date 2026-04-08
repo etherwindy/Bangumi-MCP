@@ -137,7 +137,7 @@ set BANGUMI_API_TOKEN=your_api_token_here
                 "bangumi-mcp"
             ],
             "env": {
-                "BANGUMI_TOKEN": "your_token_here"
+                "BANGUMI_API_TOKEN": "your_token_here"
             }
         }
     }

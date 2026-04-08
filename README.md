@@ -136,7 +136,7 @@ Directly import json config to your MCP client application like cherry-studio:
                 "bangumi-mcp"
             ],
             "env": {
-                "BANGUMI_TOKEN": "your_token_here"
+                "BANGUMI_API_TOKEN": "your_token_here"
             }
         }
     }
