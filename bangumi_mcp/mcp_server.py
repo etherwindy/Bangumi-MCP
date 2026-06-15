@@ -1,6 +1,7 @@
 """MCP server for Bangumi API."""
 
 import asyncio
+import json
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -25,8 +26,58 @@ from . import tools  # Import all tools from tools.py
 # Set up logging
 logger = logging.getLogger(__name__)
 
+SERVER_INSTRUCTIONS = (
+    "Bangumi-MCP exposes Bangumi API tools for searching and reading subjects, "
+    "episodes, characters, persons, indices, revisions, users, and collections. "
+    "Tools that modify authenticated user data are annotated as mutating."
+)
+
 # Create server instance
-server = Server("Bangumi-MCP", version="0.1.0")
+server = Server("Bangumi-MCP", version="0.1.0", instructions=SERVER_INSTRUCTIONS)
+
+
+def _is_content_list(result: Any) -> bool:
+    if not isinstance(result, list):
+        return False
+    content_types = (
+        types.TextContent,
+        types.ImageContent,
+        types.AudioContent,
+        types.ResourceLink,
+        types.EmbeddedResource,
+    )
+    return all(isinstance(item, content_types) for item in result)
+
+
+def _to_call_tool_result(result: Any, is_error: bool = False) -> types.CallToolResult:
+    if isinstance(result, types.CallToolResult):
+        return result
+
+    if _is_content_list(result):
+        text_errors = [
+            item.text for item in result
+            if isinstance(item, types.TextContent) and item.text.startswith("Error:")
+        ]
+        return types.CallToolResult(content=result, isError=is_error or bool(text_errors))
+
+    if isinstance(result, dict):
+        is_api_error = "title" in result and (
+            "description" in result or "details" in result or "request_id" in result
+        )
+        return types.CallToolResult(
+            content=[types.TextContent(
+                type="text",
+                text=json.dumps(result, ensure_ascii=False, indent=2)
+            )],
+            structuredContent=result,
+            isError=is_error or is_api_error,
+        )
+
+    text = json.dumps(result, ensure_ascii=False, indent=2)
+    return types.CallToolResult(
+        content=[types.TextContent(type="text", text=text)],
+        isError=is_error,
+    )
 
 @server.list_tools()
 async def handle_list_tools() -> List[types.Tool]:
@@ -39,7 +90,7 @@ async def handle_list_tools() -> List[types.Tool]:
 
 
 @server.call_tool()
-async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]]) -> List[types.TextContent]:
+async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]]) -> types.CallToolResult:
     """
     Handle tool calls.
     Args:
@@ -53,26 +104,27 @@ async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]]) -> Li
 
     try:
         if hasattr(tools, name):
+            tool = getattr(tools, name)
             # 如果工具是异步函数，使用 await 调用
-            if asyncio.iscoroutinefunction(getattr(tools, name)):
-                return await getattr(tools, name)(arguments)
+            if asyncio.iscoroutinefunction(tool):
+                return _to_call_tool_result(await tool(arguments))
             else:
-                return [types.TextContent(
-                    type="text",
-                    text="Error: Tool function is not async"
-                )]
+                return _to_call_tool_result(
+                    [types.TextContent(type="text", text="Error: Tool function is not async")],
+                    is_error=True,
+                )
         else:
-            return [types.TextContent(
-                type="text",
-                text=f"Unknown tool: {name}"
-            )]
+            return _to_call_tool_result(
+                [types.TextContent(type="text", text=f"Unknown tool: {name}")],
+                is_error=True,
+            )
             
     except Exception as e:
         logger.error(f"Error in tool {name}: {e}")
-        return [types.TextContent(
-            type="text",
-            text=f"Error: {str(e)}"
-        )]
+        return _to_call_tool_result(
+            [types.TextContent(type="text", text=f"Error: {str(e)}")],
+            is_error=True,
+        )
 
 
 async def stdio():

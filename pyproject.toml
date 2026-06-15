@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "httpx[socks]>=0.28.1",
     "jsonschema>=4.25.0",
-    "mcp",
+    "mcp>=1.27.2",
     "python-dotenv>=1.1.1",
     "starlette>=0.47.2",
     "uvicorn>=0.35.0",
@@ -19,8 +19,12 @@ dependencies = [
 [project.scripts]
 bangumi-mcp = "bangumi_mcp.__main__:main"
 
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
 [tool.setuptools.package-data]
 bangumi_mcp = ["*.json"]
 
-[tool.uv]
-dev-dependencies = []
+[dependency-groups]
+dev = []

@@ -17,6 +17,20 @@ except Exception as e:
     raise RuntimeError("Bangumi client initialization failed") from e
 
 
+def _missing_parameter(name: str):
+    return [types.TextContent(
+        type="text",
+        text=f"Error: {name} parameter is required"
+    )]
+
+
+def _invalid_choice(name: str, choices):
+    return [types.TextContent(
+        type="text",
+        text=f"Error: {name} parameter must be one of {choices}"
+    )]
+
+
 async def get_current_time(arguments):
     """
     [GET] /current_time 获取当前时间
@@ -77,19 +91,14 @@ async def get_subject_image(arguments):
     """
     [GET] /v0/subjects/{subject_id}/image 获取条目图片
     """
-    subject_id = arguments.get("subject_id")
-    type = arguments.get("type")
+    args = arguments or {}
+    subject_id = args.get("subject_id")
+    type = args.get("type")
 
     if not subject_id:
-        return [types.TextContent(
-            type="text",
-            text="Error: subject_id parameter is required"
-        )]
+        return _missing_parameter("subject_id")
     if type not in ["small", "grid", "large", "medium", "common"]:
-        return [types.TextContent(
-            type="text",
-            text="Error: type parameter must be one of ['small', 'grid', 'large', 'medium', 'common']"
-        )]
+        return _invalid_choice("type", ["small", "grid", "large", "medium", "common"])
 
     status_code, image = await bangumi_client.get_subject_image(subject_id, {"type": type})
 
@@ -168,7 +177,8 @@ async def get_episodes(arguments):
     """
     [GET] /v0/episodes 获取条目剧集/章节信息
     """
-    subject_id = arguments.get("subject_id")
+    args = arguments or {}
+    subject_id = args.get("subject_id")
     
     if not subject_id:
         return [types.TextContent(
@@ -176,7 +186,11 @@ async def get_episodes(arguments):
             text="Error: subject_id parameter is required"
         )]
     
-    status_code, episodes = await bangumi_client.get_episodes(arguments)
+    params = dict(args)
+    if "episode_type" in params and "type" not in params:
+        params["type"] = params.pop("episode_type")
+    
+    status_code, episodes = await bangumi_client.get_episodes(params)
 
     return remove_null_items(episodes)
 
@@ -225,6 +239,27 @@ async def get_character_info(arguments):
     status_code, info = await bangumi_client.get_character_info(character_id)
 
     return remove_null_items(info)
+
+
+async def get_character_image(arguments):
+    """
+    [GET] /v0/characters/{character_id}/image 获取角色图片
+    """
+    args = arguments or {}
+    character_id = args.get("character_id")
+    type = args.get("type")
+
+    if not character_id:
+        return _missing_parameter("character_id")
+    if type not in ["small", "grid", "large", "medium"]:
+        return _invalid_choice("type", ["small", "grid", "large", "medium"])
+
+    status_code, image = await bangumi_client.get_character_image(character_id, {"type": type})
+
+    if status_code >= 400:
+        return image
+    else:
+        return {"url": image["url"], "type": type}
 
 
 async def get_character_subjects(arguments):
@@ -338,6 +373,27 @@ async def get_person_info(arguments):
     return remove_null_items(info)
 
 
+async def get_person_image(arguments):
+    """
+    [GET] /v0/persons/{person_id}/image 获取人物图片
+    """
+    args = arguments or {}
+    person_id = args.get("person_id")
+    type = args.get("type")
+
+    if not person_id:
+        return _missing_parameter("person_id")
+    if type not in ["small", "grid", "large", "medium"]:
+        return _invalid_choice("type", ["small", "grid", "large", "medium"])
+
+    status_code, image = await bangumi_client.get_person_image(person_id, {"type": type})
+
+    if status_code >= 400:
+        return image
+    else:
+        return {"url": image["url"], "type": type}
+
+
 async def get_person_subjects(arguments):
     """
     [GET] /v0/persons/{person_id}/subjects 获取人物相关条目
@@ -418,6 +474,290 @@ async def delete_person_collection(arguments):
         return {"info": f"人物 {person_id} 取消收藏成功！"}
 
 
+#-------------------------目录-------------------------
+async def post_index(arguments):
+    """
+    [POST] /v0/indices 创建目录
+    """
+    status_code, result = await bangumi_client.post_index()
+
+    if status_code >= 400:
+        return result
+    else:
+        return remove_null_items(result)
+
+
+async def get_index_info(arguments):
+    """
+    [GET] /v0/indices/{index_id} 获取目录信息
+    """
+    args = arguments or {}
+    index_id = args.get("index_id")
+
+    if not index_id:
+        return _missing_parameter("index_id")
+
+    status_code, info = await bangumi_client.get_index_info(index_id)
+
+    return remove_null_items(info)
+
+
+async def put_index(arguments):
+    """
+    [PUT] /v0/indices/{index_id} 更新目录信息
+    """
+    args = arguments or {}
+    index_id = args.get("index_id")
+    params = args.get("params", {})
+
+    if not index_id:
+        return _missing_parameter("index_id")
+
+    status_code, result = await bangumi_client.put_index(index_id, params)
+
+    if status_code >= 400:
+        return result
+    else:
+        return remove_null_items(result)
+
+
+async def post_index_collection(arguments):
+    """
+    [POST] /v0/indices/{index_id}/collect 收藏目录
+    """
+    args = arguments or {}
+    index_id = args.get("index_id")
+
+    if not index_id:
+        return _missing_parameter("index_id")
+
+    status_code, result = await bangumi_client.post_index_collection(index_id)
+
+    if status_code >= 400:
+        return result
+    else:
+        return {"info": f"目录 {index_id} 收藏成功!"}
+
+
+async def delete_index_collection(arguments):
+    """
+    [DELETE] /v0/indices/{index_id}/collect 取消收藏目录
+    """
+    args = arguments or {}
+    index_id = args.get("index_id")
+
+    if not index_id:
+        return _missing_parameter("index_id")
+
+    status_code, result = await bangumi_client.delete_index_collection(index_id)
+
+    if status_code >= 400:
+        return result
+    else:
+        return {"info": f"目录 {index_id} 取消收藏成功!"}
+
+
+async def get_index_subjects(arguments):
+    """
+    [GET] /v0/indices/{index_id}/subjects 获取目录条目
+    """
+    args = arguments or {}
+    index_id = args.get("index_id")
+    params = args.get("params", {})
+
+    if not index_id:
+        return _missing_parameter("index_id")
+
+    status_code, results = await bangumi_client.get_index_subjects(index_id, params)
+
+    return remove_null_items(results)
+
+
+async def post_index_subject(arguments):
+    """
+    [POST] /v0/indices/{index_id}/subjects 添加条目到目录
+    """
+    args = arguments or {}
+    index_id = args.get("index_id")
+    params = args.get("params", {})
+
+    if not index_id:
+        return _missing_parameter("index_id")
+    if not params.get("subject_id"):
+        return _missing_parameter("params.subject_id")
+
+    status_code, result = await bangumi_client.post_index_subject(index_id, params)
+
+    if status_code >= 400:
+        return result
+    else:
+        return {"info": f"条目 {params['subject_id']} 已添加到目录 {index_id}!"}
+
+
+async def put_index_subject(arguments):
+    """
+    [PUT] /v0/indices/{index_id}/subjects/{subject_id} 更新目录中的条目信息
+    """
+    args = arguments or {}
+    index_id = args.get("index_id")
+    subject_id = args.get("subject_id")
+    params = args.get("params", {})
+
+    if not index_id:
+        return _missing_parameter("index_id")
+    if not subject_id:
+        return _missing_parameter("subject_id")
+
+    status_code, result = await bangumi_client.put_index_subject(index_id, subject_id, params)
+
+    if status_code >= 400:
+        return result
+    else:
+        return {"info": f"目录 {index_id} 中的条目 {subject_id} 更新成功!"}
+
+
+async def delete_index_subject(arguments):
+    """
+    [DELETE] /v0/indices/{index_id}/subjects/{subject_id} 从目录删除条目
+    """
+    args = arguments or {}
+    index_id = args.get("index_id")
+    subject_id = args.get("subject_id")
+
+    if not index_id:
+        return _missing_parameter("index_id")
+    if not subject_id:
+        return _missing_parameter("subject_id")
+
+    status_code, result = await bangumi_client.delete_index_subject(index_id, subject_id)
+
+    if status_code >= 400:
+        return result
+    else:
+        return {"info": f"条目 {subject_id} 已从目录 {index_id} 删除!"}
+
+
+#-------------------------修订历史-------------------------
+async def get_subject_revisions(arguments):
+    """
+    [GET] /v0/revisions/subjects 获取条目修订历史
+    """
+    args = arguments or {}
+    subject_id = args.get("subject_id")
+
+    if not subject_id:
+        return _missing_parameter("subject_id")
+
+    status_code, results = await bangumi_client.get_subject_revisions(args)
+
+    return remove_null_items(results)
+
+
+async def get_subject_revision_info(arguments):
+    """
+    [GET] /v0/revisions/subjects/{revision_id} 获取条目修订详情
+    """
+    args = arguments or {}
+    revision_id = args.get("revision_id")
+
+    if not revision_id:
+        return _missing_parameter("revision_id")
+
+    status_code, info = await bangumi_client.get_subject_revision_info(revision_id)
+
+    return remove_null_items(info)
+
+
+async def get_episode_revisions(arguments):
+    """
+    [GET] /v0/revisions/episodes 获取章节修订历史
+    """
+    args = arguments or {}
+    episode_id = args.get("episode_id")
+
+    if not episode_id:
+        return _missing_parameter("episode_id")
+
+    status_code, results = await bangumi_client.get_episode_revisions(args)
+
+    return remove_null_items(results)
+
+
+async def get_episode_revision_info(arguments):
+    """
+    [GET] /v0/revisions/episodes/{revision_id} 获取章节修订详情
+    """
+    args = arguments or {}
+    revision_id = args.get("revision_id")
+
+    if not revision_id:
+        return _missing_parameter("revision_id")
+
+    status_code, info = await bangumi_client.get_episode_revision_info(revision_id)
+
+    return remove_null_items(info)
+
+
+async def get_character_revisions(arguments):
+    """
+    [GET] /v0/revisions/characters 获取角色修订历史
+    """
+    args = arguments or {}
+    character_id = args.get("character_id")
+
+    if not character_id:
+        return _missing_parameter("character_id")
+
+    status_code, results = await bangumi_client.get_character_revisions(args)
+
+    return remove_null_items(results)
+
+
+async def get_character_revision_info(arguments):
+    """
+    [GET] /v0/revisions/characters/{revision_id} 获取角色修订详情
+    """
+    args = arguments or {}
+    revision_id = args.get("revision_id")
+
+    if not revision_id:
+        return _missing_parameter("revision_id")
+
+    status_code, info = await bangumi_client.get_character_revision_info(revision_id)
+
+    return remove_null_items(info)
+
+
+async def get_person_revisions(arguments):
+    """
+    [GET] /v0/revisions/persons 获取人物修订历史
+    """
+    args = arguments or {}
+    person_id = args.get("person_id")
+
+    if not person_id:
+        return _missing_parameter("person_id")
+
+    status_code, results = await bangumi_client.get_person_revisions(args)
+
+    return remove_null_items(results)
+
+
+async def get_person_revision_info(arguments):
+    """
+    [GET] /v0/revisions/persons/{revision_id} 获取人物修订详情
+    """
+    args = arguments or {}
+    revision_id = args.get("revision_id")
+
+    if not revision_id:
+        return _missing_parameter("revision_id")
+
+    status_code, info = await bangumi_client.get_person_revision_info(revision_id)
+
+    return remove_null_items(info)
+
+
 #-------------------------用户-------------------------
 async def get_user_info(arguments):
     """
@@ -436,9 +776,30 @@ async def get_user_info(arguments):
     return remove_null_items(info)
 
 
+async def get_user_avatar(arguments):
+    """
+    [GET] /v0/users/{username}/avatar 获取用户头像
+    """
+    args = arguments or {}
+    username = args.get("username")
+    type = args.get("type")
+
+    if not username:
+        return _missing_parameter("username")
+    if type not in ["small", "large", "medium"]:
+        return _invalid_choice("type", ["small", "large", "medium"])
+
+    status_code, avatar = await bangumi_client.get_user_avatar(username, {"type": type})
+
+    if status_code >= 400:
+        return avatar
+    else:
+        return {"url": avatar["url"], "type": type}
+
+
 async def get_me_info(arguments):
     """
-    [GET] /v0/users/me 获取当前用户信息
+    [GET] /v0/me 获取当前用户信息
     """
     status_code, info = await bangumi_client.get_me_info()
 

@@ -14,11 +14,13 @@
   A Model Context Protocol (MCP) server for accessing Bangumi API
 </p>
 
-Bangumi MCP is a Model Context Protocol (MCP) server that provides access to the [Banguimi API](https://bangumi.github.io/api/), allowing users to search for and retrieve information about anime, manga, and other related content.
+Bangumi MCP is a Model Context Protocol (MCP) server that provides access to the [Bangumi API](https://bangumi.github.io/api/), allowing users to search for and retrieve information about anime, manga, and other related content.
 
 ## Features
 
 The Bangumi MCP server provides a comprehensive set of tools for interacting with the Bangumi API, including:
+
+The project tracks the Bangumi OpenAPI schema bundled in `bangumi_mcp/dist.json` and currently targets the `2026-05-2` API schema. It requires `mcp>=1.27.2` and uses modern MCP features such as tool output schemas, structured tool results, tool annotations, and Streamable HTTP.
 
 ### Calendar and Time
 
@@ -30,6 +32,7 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 - `search_subjects`: Search for subjects with various filters
 - `get_subjects`: Browse subjects by type and category
 - `get_subject_info`: Get detailed information about a specific subject
+- `get_subject_image`: Get a subject image URL
 - `get_subject_persons`: Get person information for a subject
 - `get_subject_characters`: Get character information for a subject
 - `get_subject_relations`: Get related subjects
@@ -39,10 +42,22 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 - `get_episodes`: Get episode information for a subject
 - `get_episode_info`: Get detailed information about a specific episode
 
+### Revision Tools
+
+- `get_subject_revisions`: Get subject revision history
+- `get_subject_revision_info`: Get subject revision details
+- `get_episode_revisions`: Get episode revision history
+- `get_episode_revision_info`: Get episode revision details
+- `get_character_revisions`: Get character revision history
+- `get_character_revision_info`: Get character revision details
+- `get_person_revisions`: Get person revision history
+- `get_person_revision_info`: Get person revision details
+
 ### Character Tools
 
 - `search_characters`: Search for characters
 - `get_character_info`: Get detailed character information
+- `get_character_image`: Get a character image URL
 - `get_character_subjects`: Get subjects related to a character
 - `get_character_persons`: Get persons related to a character
 - `post_character_collection`: Collect a character
@@ -51,13 +66,27 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
 
 - `search_persons`: Search for persons
 - `get_person_info`: Get detailed person information
+- `get_person_image`: Get a person image URL
 - `get_person_subjects`: Get subjects related to a person
 - `get_person_characters`: Get characters related to a person
 - `post_person_collection`: Collect a person
 
+### Index Tools
+
+- `post_index`: Create an index for the current user
+- `get_index_info`: Get index information
+- `put_index`: Update index information
+- `post_index_collection`: Collect an index
+- `delete_index_collection`: Uncollect an index
+- `get_index_subjects`: Get subjects in an index
+- `post_index_subject`: Add a subject to an index
+- `put_index_subject`: Update a subject in an index
+- `delete_index_subject`: Delete a subject from an index
+
 ### User Tools
 
 - `get_user_info`: Get user information
+- `get_user_avatar`: Get a user avatar URL
 - `get_me_info`: Get current user information
 
 ### Collection Tools
@@ -84,13 +113,16 @@ The Bangumi MCP server provides a comprehensive set of tools for interacting wit
    cd Bangumi-MCP
    ```
 
-2. Install the package:
+2. Install dependencies:
 
-   It is recommaneded to use uv:
+   It is recommended to use uv. The project includes a standard build configuration, so the `bangumi-mcp` console script is available after syncing:
 
    ```bash
-   uv pip install -e .
+   uv sync
+   uv run bangumi-mcp --help
    ```
+
+   You can also install it into another environment with `uv pip install -e .`.
 
 ## Server Configuration
 
@@ -122,7 +154,7 @@ set BANGUMI_API_TOKEN=your_api_token_here
 
 ### STDIO
 
-Directly import json config to your MCP client application like cherry-studio:
+Import this JSON config into your MCP client application, such as Cherry Studio:
 
 ```json
 {
@@ -131,7 +163,7 @@ Directly import json config to your MCP client application like cherry-studio:
             "command": "uv",
             "args": [
                 "--directory",
-                "{your_path_to_the_folder}/Bangmumi-MCP",
+                "{your_path_to_the_folder}/Bangumi-MCP",
                 "run",
                 "bangumi-mcp"
             ],
@@ -152,7 +184,7 @@ cd Bangumi-MCP
 uv run bangumi-mcp --mode=sse --host localhost --port 18080
 ```
 
-Config your MCP client application, for example:
+Configure your MCP client application, for example:
 
 ```json
 {
@@ -174,7 +206,7 @@ cd Bangumi-MCP
 uv run bangumi-mcp --mode=streamable_http --host localhost --port 18080
 ```
 
-Config your MCP client application, for example:
+Configure your MCP client application, for example:
 
 ```json
 {
@@ -186,6 +218,13 @@ Config your MCP client application, for example:
    }
 }
 ```
+
+## Modern MCP Support
+
+- Tool responses include `structuredContent` when the underlying tool returns structured JSON data, while still including readable JSON text for compatibility.
+- Tool metadata includes MCP annotations such as `readOnlyHint`, `destructiveHint`, `idempotentHint`, and `openWorldHint`.
+- The server supports STDIO, SSE, and Streamable HTTP transports.
+- Mutating tools require a valid `BANGUMI_API_TOKEN`; read-only public API tools can be used without a token where Bangumi allows it.
 
 ## Acknowledgements
 

@@ -3,6 +3,42 @@ from bangumi_mcp.utils import resolve_json_schema
 
 json_schema = resolve_json_schema("dist.json")
 
+error_schema = json_schema["components"]["schemas"]["ErrorDetail"]
+url_output_schema = {
+    "type": "object",
+    "oneOf": [
+        error_schema,
+        {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "图片跳转后的 URL"
+                },
+                "type": {
+                    "type": "string",
+                    "description": "图片尺寸类型"
+                }
+            }
+        }
+    ]
+}
+info_output_schema = {
+    "type": "object",
+    "oneOf": [
+        error_schema,
+        {
+            "type": "object",
+            "properties": {
+                "info": {
+                    "type": "string",
+                    "description": "操作结果信息"
+                }
+            }
+        }
+    ]
+}
+
 tool_list = [
         types.Tool(
             name="get_current_time",
@@ -236,24 +272,25 @@ tool_list = [
                 ]
             }
         ),
-        #   types.Tool(
-        #       name="get_subject_image",
-        #       description="获取条目图片 URL",
-        #       inputSchema={
-        #           "type": "object",
-        #           "properties": {
-        #               "subject_id": {
-        #                   "type": "integer",
-        #                   "description": "条目ID"
-        #               },
-        #               "type": {
-        #                   "type": "string",
-        #                   "description": "大小 {small|grid|large|medium|common}",
-        #               },
-        #           },
-        #           "required": ["subject_id", "type"]
-        #       }
-        #   ),
+        types.Tool(
+            name="get_subject_image",
+            description="获取条目图片 URL",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "subject_id": {
+                        "type": "integer",
+                        "description": "条目ID"
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "大小 {small|grid|large|medium|common}",
+                    },
+                },
+                "required": ["subject_id", "type"]
+            },
+            outputSchema=url_output_schema
+        ),
         types.Tool(
             name="get_subject_persons",
             description="获取条目相关人员信息列表",
@@ -351,7 +388,7 @@ tool_list = [
                         "type": "integer",
                         "description": "条目ID"
                     },
-                    "episode_type": {
+                    "type": {
                         "type": "integer",
                         "description": "集数类型：0=本篇，1=特别篇，2=OP, 3=ED，4=预告/宣传/广告，5=MAD，6=其他",
                         "default": None
@@ -461,6 +498,25 @@ tool_list = [
                     json_schema["components"]["schemas"]["ErrorDetail"]
                 ]
             }
+        ),
+        types.Tool(
+            name="get_character_image",
+            description="获取角色图片 URL",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "character_id": {
+                        "type": "integer",
+                        "description": "角色ID"
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "大小 {small|grid|large|medium}",
+                    },
+                },
+                "required": ["character_id", "type"]
+            },
+            outputSchema=url_output_schema
         ),
         types.Tool(
             name="get_character_subjects",
@@ -636,6 +692,25 @@ tool_list = [
             }
         ),
         types.Tool(
+            name="get_person_image",
+            description="获取人物图片 URL",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "person_id": {
+                        "type": "integer",
+                        "description": "人物ID"
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "大小 {small|grid|large|medium}",
+                    },
+                },
+                "required": ["person_id", "type"]
+            },
+            outputSchema=url_output_schema
+        ),
+        types.Tool(
             name="get_person_subjects",
             description="获取人物相关条目列表",
             inputSchema={
@@ -751,6 +826,400 @@ tool_list = [
         #       }
         #   ),
         types.Tool(
+            name="post_index",
+            description="为当前用户创建新目录",
+            inputSchema={
+                "type": "object",
+                "properties": {}
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Index"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="get_index_info",
+            description="获取目录信息",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "index_id": {
+                        "type": "integer",
+                        "description": "目录ID"
+                    }
+                },
+                "required": ["index_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Index"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="put_index",
+            description="更新当前用户创建的目录信息",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "index_id": {
+                        "type": "integer",
+                        "description": "目录ID"
+                    },
+                    "params": json_schema["components"]["schemas"]["IndexBasicInfo"],
+                },
+                "required": ["index_id", "params"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Index"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="post_index_collection",
+            description="为当前用户收藏目录",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "index_id": {
+                        "type": "integer",
+                        "description": "目录ID"
+                    }
+                },
+                "required": ["index_id"]
+            },
+            outputSchema=info_output_schema
+        ),
+        types.Tool(
+            name="delete_index_collection",
+            description="为当前用户取消收藏目录",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "index_id": {
+                        "type": "integer",
+                        "description": "目录ID"
+                    }
+                },
+                "required": ["index_id"]
+            },
+            outputSchema=info_output_schema
+        ),
+        types.Tool(
+            name="get_index_subjects",
+            description="获取目录中的条目列表",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "index_id": {
+                        "type": "integer",
+                        "description": "目录ID"
+                    },
+                    "params": {
+                        "type": "object",
+                        "description": "可选参数，包含条目类型、分页限制和偏移量",
+                        "properties": {
+                            "type": {
+                                "type": "integer",
+                                "description": "条目类型：1=书籍，2=动画，3=音乐，4=游戏，6=三次元，没有5",
+                                "default": None
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "description": "返回结果数量限制",
+                                "default": 30
+                            },
+                            "offset": {
+                                "type": "integer",
+                                "description": "分页偏移量",
+                                "default": 0
+                            }
+                        },
+                        "default": {}
+                    }
+                },
+                "required": ["index_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_IndexSubject"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="post_index_subject",
+            description="添加条目到当前用户创建的目录",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "index_id": {
+                        "type": "integer",
+                        "description": "目录ID"
+                    },
+                    "params": json_schema["components"]["schemas"]["IndexSubjectAddInfo"],
+                },
+                "required": ["index_id", "params"]
+            },
+            outputSchema=info_output_schema
+        ),
+        types.Tool(
+            name="put_index_subject",
+            description="更新目录中的条目排序或评论",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "index_id": {
+                        "type": "integer",
+                        "description": "目录ID"
+                    },
+                    "subject_id": {
+                        "type": "integer",
+                        "description": "条目ID"
+                    },
+                    "params": json_schema["components"]["schemas"]["IndexSubjectEditInfo"],
+                },
+                "required": ["index_id", "subject_id", "params"]
+            },
+            outputSchema=info_output_schema
+        ),
+        types.Tool(
+            name="delete_index_subject",
+            description="从当前用户创建的目录中删除条目",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "index_id": {
+                        "type": "integer",
+                        "description": "目录ID"
+                    },
+                    "subject_id": {
+                        "type": "integer",
+                        "description": "条目ID"
+                    }
+                },
+                "required": ["index_id", "subject_id"]
+            },
+            outputSchema=info_output_schema
+        ),
+        types.Tool(
+            name="get_subject_revisions",
+            description="获取条目修订历史列表",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "subject_id": {
+                        "type": "integer",
+                        "description": "条目ID"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "返回结果数量限制",
+                        "default": 30
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "分页偏移量",
+                        "default": 0
+                    }
+                },
+                "required": ["subject_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_Revision"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="get_subject_revision_info",
+            description="获取条目修订详情",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "revision_id": {
+                        "type": "integer",
+                        "description": "历史版本ID"
+                    }
+                },
+                "required": ["revision_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["SubjectRevision"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="get_episode_revisions",
+            description="获取章节修订历史列表",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "episode_id": {
+                        "type": "integer",
+                        "description": "章节ID"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "返回结果数量限制",
+                        "default": 30
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "分页偏移量",
+                        "default": 0
+                    }
+                },
+                "required": ["episode_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_Revision"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="get_episode_revision_info",
+            description="获取章节修订详情",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "revision_id": {
+                        "type": "integer",
+                        "description": "历史版本ID"
+                    }
+                },
+                "required": ["revision_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["DetailedRevision"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="get_character_revisions",
+            description="获取角色修订历史列表",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "character_id": {
+                        "type": "integer",
+                        "description": "角色ID"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "返回结果数量限制",
+                        "default": 30
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "分页偏移量",
+                        "default": 0
+                    }
+                },
+                "required": ["character_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_Revision"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="get_character_revision_info",
+            description="获取角色修订详情",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "revision_id": {
+                        "type": "integer",
+                        "description": "历史版本ID"
+                    }
+                },
+                "required": ["revision_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["CharacterRevision"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="get_person_revisions",
+            description="获取人物修订历史列表",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "person_id": {
+                        "type": "integer",
+                        "description": "人物ID"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "返回结果数量限制",
+                        "default": 30
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "description": "分页偏移量",
+                        "default": 0
+                    }
+                },
+                "required": ["person_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["Paged_Revision"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
+            name="get_person_revision_info",
+            description="获取人物修订详情",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "revision_id": {
+                        "type": "integer",
+                        "description": "历史版本ID"
+                    }
+                },
+                "required": ["revision_id"]
+            },
+            outputSchema={
+                "type": "object",
+                "oneOf": [
+                    json_schema["components"]["schemas"]["PersonRevision"],
+                    error_schema
+                ]
+            }
+        ),
+        types.Tool(
             name="get_user_info",
             description="获取用户信息",
             inputSchema={
@@ -770,6 +1239,25 @@ tool_list = [
                     json_schema["components"]["schemas"]["ErrorDetail"]
                 ]
             }
+        ),
+        types.Tool(
+            name="get_user_avatar",
+            description="获取用户头像 URL",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "description": "用户名/ID"
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "大小 {small|large|medium}",
+                    },
+                },
+                "required": ["username", "type"]
+            },
+            outputSchema=url_output_schema
         ),
         types.Tool(
             name="get_me_info",
@@ -1070,16 +1558,12 @@ tool_list = [
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "subject_id": {
-                        "type": "integer",
-                        "description": "条目ID"
-                    },
                     "episode_id": {
                         "type": "integer",
                         "description": "剧集ID"
                     }
                 },
-                "required": ["subject_id", "episode_id"]
+                "required": ["episode_id"]
             },
             outputSchema={
                 "type": "object",
@@ -1215,3 +1699,49 @@ tool_list = [
             }
         )
     ]
+
+
+_MUTATING_TOOLS = {
+    "post_character_collection",
+    "post_person_collection",
+    "post_index",
+    "put_index",
+    "post_index_collection",
+    "delete_index_collection",
+    "post_index_subject",
+    "put_index_subject",
+    "delete_index_subject",
+    "post_my_collection",
+    "patch_my_collection",
+    "patch_my_episode_collections",
+    "put_my_episode_collection_info",
+}
+
+_DESTRUCTIVE_TOOLS = {
+    "delete_index_collection",
+    "delete_index_subject",
+}
+
+_IDEMPOTENT_WRITE_TOOLS = {
+    "put_index",
+    "post_index_collection",
+    "delete_index_collection",
+    "put_index_subject",
+    "delete_index_subject",
+    "post_my_collection",
+    "patch_my_collection",
+    "patch_my_episode_collections",
+    "put_my_episode_collection_info",
+}
+
+
+for tool in tool_list:
+    is_mutating = tool.name in _MUTATING_TOOLS
+    is_destructive = tool.name in _DESTRUCTIVE_TOOLS
+    tool.annotations = types.ToolAnnotations(
+        title=tool.description,
+        readOnlyHint=not is_mutating,
+        destructiveHint=is_destructive,
+        idempotentHint=(tool.name in _IDEMPOTENT_WRITE_TOOLS) or not is_mutating,
+        openWorldHint=True,
+    )

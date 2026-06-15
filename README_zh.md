@@ -21,6 +21,8 @@ Bangumi MCP 是一个模型上下文协议（MCP）服务器，提供对 [Bangum
 
 Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，包括：
 
+本项目跟随内置的 Bangumi OpenAPI 规格文件 `bangumi_mcp/dist.json`，当前适配 `2026-05-2` 版 API schema。项目要求 `mcp>=1.27.2`，并支持较新的 MCP 能力，包括工具输出 schema、结构化工具结果、工具 annotations 和 Streamable HTTP。
+
 ### 日历和时间
 
 - `get_current_time`：获取当前时间
@@ -31,6 +33,7 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
 - `search_subjects`：搜索条目，支持多种过滤器
 - `get_subjects`：按类型和分类浏览条目
 - `get_subject_info`：获取特定条目的详细信息
+- `get_subject_image`：获取条目图片 URL
 - `get_subject_persons`：获取条目的人物信息
 - `get_subject_characters`：获取条目的角色信息
 - `get_subject_relations`：获取相关条目
@@ -40,10 +43,22 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
 - `get_episodes`：获取条目的剧集/章节信息
 - `get_episode_info`：获取特定剧集/章节的详细信息
 
+### 修订历史工具
+
+- `get_subject_revisions`：获取条目修订历史
+- `get_subject_revision_info`：获取条目修订详情
+- `get_episode_revisions`：获取章节修订历史
+- `get_episode_revision_info`：获取章节修订详情
+- `get_character_revisions`：获取角色修订历史
+- `get_character_revision_info`：获取角色修订详情
+- `get_person_revisions`：获取人物修订历史
+- `get_person_revision_info`：获取人物修订详情
+
 ### 角色工具
 
 - `search_characters`：搜索角色
 - `get_character_info`：获取角色详细信息
+- `get_character_image`：获取角色图片 URL
 - `get_character_subjects`：获取与角色相关的条目
 - `get_character_persons`：获取与角色相关的人物
 - `post_character_collection`：收藏角色
@@ -52,13 +67,27 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
 
 - `search_persons`：搜索人物
 - `get_person_info`：获取人物详细信息
+- `get_person_image`：获取人物图片 URL
 - `get_person_subjects`：获取与人物相关的条目
 - `get_person_characters`：获取与人物相关的角色
 - `post_person_collection`：收藏人物
 
+### 目录工具
+
+- `post_index`：为当前用户创建目录
+- `get_index_info`：获取目录信息
+- `put_index`：更新目录信息
+- `post_index_collection`：收藏目录
+- `delete_index_collection`：取消收藏目录
+- `get_index_subjects`：获取目录中的条目列表
+- `post_index_subject`：向目录添加条目
+- `put_index_subject`：更新目录中的条目信息
+- `delete_index_subject`：从目录删除条目
+
 ### 用户工具
 
 - `get_user_info`：获取用户信息
+- `get_user_avatar`：获取用户头像 URL
 - `get_me_info`：获取当前用户信息
 
 ### 收藏工具
@@ -85,13 +114,16 @@ Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，�
    cd Bangumi-MCP
    ```
 
-2. 安装包：
+2. 安装依赖：
 
-   推荐使用 uv：
+   推荐使用 uv。本项目已包含标准构建配置，执行同步后即可使用 `bangumi-mcp` 命令：
 
    ```bash
-   uv pip install -e .
+   uv sync
+   uv run bangumi-mcp --help
    ```
+
+   也可以使用 `uv pip install -e .` 安装到其他环境中。
 
 ## 服务器配置
 
@@ -123,7 +155,7 @@ set BANGUMI_API_TOKEN=your_api_token_here
 
 ### STDIO
 
-直接将 json 设置导入你的 MCP 客户端应用，如 cherry-studio:
+直接将 JSON 配置导入你的 MCP 客户端应用，例如 Cherry Studio:
 
 ```json
 {
@@ -132,7 +164,7 @@ set BANGUMI_API_TOKEN=your_api_token_here
             "command": "uv",
             "args": [
                 "--directory",
-                "{your_path_to_the_folder}/Bangmumi-MCP",
+                "{your_path_to_the_folder}/Bangumi-MCP",
                 "run",
                 "bangumi-mcp"
             ],
@@ -187,6 +219,13 @@ uv run bangumi-mcp --mode=streamable_http --host localhost --port 18080
    }
 }
 ```
+
+## 现代 MCP 支持
+
+- 当工具返回结构化 JSON 数据时，响应会包含 `structuredContent`，同时保留可读的 JSON 文本以兼容普通客户端。
+- 工具元数据包含 MCP annotations，例如 `readOnlyHint`、`destructiveHint`、`idempotentHint` 和 `openWorldHint`。
+- 服务支持 STDIO、SSE 和 Streamable HTTP 三种传输方式。
+- 会修改当前用户数据的工具需要有效的 `BANGUMI_API_TOKEN`；Bangumi 允许公开访问的只读接口可不带 token 使用。
 
 ## 鸣谢
 

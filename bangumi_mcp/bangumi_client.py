@@ -22,14 +22,17 @@ class BangumiClient:
         if not self.token:
             self.token = None
         
+        headers = {
+            "User-Agent": "https://github.com/etherwindy/Bangumi-MCP",
+            "Content-Type": "application/json",
+            "accept": "*/*",
+        }
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+
         self.client = httpx.AsyncClient(
             base_url=self.BASE_URL,
-            headers={
-                "Authorization": f"Bearer {self.token}",
-                "User-Agent": "https://github.com/etherwindy/Bangumi-MCP",
-                "Content-Type": "application/json",
-                "accept": "*/*",
-            }
+            headers=headers
         )
     
     async def close(self) -> None:
@@ -43,6 +46,18 @@ class BangumiClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.close()
+
+    def _parse_response(self, response: httpx.Response) -> Dict[str, Any]:
+        """Return JSON response data, or an empty object for empty bodies."""
+        if response.content == b'':
+            return {}
+        return response.json()
+
+    def _parse_redirect_response(self, response: httpx.Response) -> Dict[str, Any]:
+        """Return redirect URL for image endpoints or JSON error details."""
+        if response.status_code == 302:
+            return {"url": response.headers.get("Location", "")}
+        return self._parse_response(response)
 
     async def get_calendar(self) -> tuple[int, Union[Dict[str, Any], List[Dict[str, Any]]]]:
         """
@@ -98,13 +113,7 @@ class BangumiClient:
             List of images for the subject
         """
         response = await self.client.get(f"/v0/subjects/{subject_id}/image", params=params)
-        # get header for image URLs
-        if response.status_code == 302:
-            url = response.headers.get("Location", "")
-            return response.status_code, {"url": url}
-        else:
-            
-            return response.status_code, response.json()
+        return response.status_code, self._parse_redirect_response(response)
 
     async def get_subject_persons(self, subject_id: int) -> tuple[int, Union[List[Dict[str, Any]], Dict[str, Any]]]:
         """Get persons (staff) for a subject.
@@ -190,6 +199,11 @@ class BangumiClient:
         
         return response.status_code, response.json()
 
+    async def get_character_image(self, character_id: int, params: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
+        """Get image URL for a character."""
+        response = await self.client.get(f"/v0/characters/{character_id}/image", params=params)
+        return response.status_code, self._parse_redirect_response(response)
+
     async def get_character_subjects(self, character_id: int) -> tuple[int, Union[List[Dict[str, Any]], Dict[str, Any]]]:
         """
         Get subjects related to a character.
@@ -273,6 +287,108 @@ class BangumiClient:
         
         return response.status_code, response.json()
 
+    async def get_person_image(self, person_id: int, params: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
+        """Get image URL for a person."""
+        response = await self.client.get(f"/v0/persons/{person_id}/image", params=params)
+        return response.status_code, self._parse_redirect_response(response)
+
+    async def post_index(self) -> tuple[int, Dict[str, Any]]:
+        """Create a new index."""
+        response = await self.client.post("/v0/indices")
+        return response.status_code, self._parse_response(response)
+
+    async def get_index_info(self, index_id: int) -> tuple[int, Dict[str, Any]]:
+        """Get index information."""
+        response = await self.client.get(f"/v0/indices/{index_id}")
+        return response.status_code, response.json()
+
+    async def put_index(self, index_id: int, params: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
+        """Edit index information."""
+        response = await self.client.put(f"/v0/indices/{index_id}", json=params)
+        return response.status_code, self._parse_response(response)
+
+    async def post_index_collection(self, index_id: int) -> tuple[int, Dict[str, Any]]:
+        """Collect an index."""
+        response = await self.client.post(f"/v0/indices/{index_id}/collect")
+        return response.status_code, self._parse_response(response)
+
+    async def delete_index_collection(self, index_id: int) -> tuple[int, Dict[str, Any]]:
+        """Uncollect an index."""
+        response = await self.client.delete(f"/v0/indices/{index_id}/collect")
+        return response.status_code, self._parse_response(response)
+
+    async def get_index_subjects(
+        self,
+        index_id: int,
+        params: Optional[Dict[str, Any]] = None
+    ) -> tuple[int, Dict[str, Any]]:
+        """Get subjects in an index."""
+        response = await self.client.get(f"/v0/indices/{index_id}/subjects", params=params)
+        return response.status_code, response.json()
+
+    async def post_index_subject(self, index_id: int, params: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
+        """Add a subject to an index."""
+        response = await self.client.post(f"/v0/indices/{index_id}/subjects", json=params)
+        return response.status_code, self._parse_response(response)
+
+    async def put_index_subject(
+        self,
+        index_id: int,
+        subject_id: int,
+        params: Dict[str, Any]
+    ) -> tuple[int, Dict[str, Any]]:
+        """Edit a subject in an index."""
+        response = await self.client.put(
+            f"/v0/indices/{index_id}/subjects/{subject_id}",
+            json=params
+        )
+        return response.status_code, self._parse_response(response)
+
+    async def delete_index_subject(self, index_id: int, subject_id: int) -> tuple[int, Dict[str, Any]]:
+        """Delete a subject from an index."""
+        response = await self.client.delete(f"/v0/indices/{index_id}/subjects/{subject_id}")
+        return response.status_code, self._parse_response(response)
+
+    async def get_subject_revisions(self, params: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
+        """Get subject revision list."""
+        response = await self.client.get("/v0/revisions/subjects", params=params)
+        return response.status_code, response.json()
+
+    async def get_subject_revision_info(self, revision_id: int) -> tuple[int, Dict[str, Any]]:
+        """Get subject revision detail."""
+        response = await self.client.get(f"/v0/revisions/subjects/{revision_id}")
+        return response.status_code, response.json()
+
+    async def get_episode_revisions(self, params: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
+        """Get episode revision list."""
+        response = await self.client.get("/v0/revisions/episodes", params=params)
+        return response.status_code, response.json()
+
+    async def get_episode_revision_info(self, revision_id: int) -> tuple[int, Dict[str, Any]]:
+        """Get episode revision detail."""
+        response = await self.client.get(f"/v0/revisions/episodes/{revision_id}")
+        return response.status_code, response.json()
+
+    async def get_character_revisions(self, params: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
+        """Get character revision list."""
+        response = await self.client.get("/v0/revisions/characters", params=params)
+        return response.status_code, response.json()
+
+    async def get_character_revision_info(self, revision_id: int) -> tuple[int, Dict[str, Any]]:
+        """Get character revision detail."""
+        response = await self.client.get(f"/v0/revisions/characters/{revision_id}")
+        return response.status_code, response.json()
+
+    async def get_person_revisions(self, params: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
+        """Get person revision list."""
+        response = await self.client.get("/v0/revisions/persons", params=params)
+        return response.status_code, response.json()
+
+    async def get_person_revision_info(self, revision_id: int) -> tuple[int, Dict[str, Any]]:
+        """Get person revision detail."""
+        response = await self.client.get(f"/v0/revisions/persons/{revision_id}")
+        return response.status_code, response.json()
+
     async def get_person_subjects(self, person_id: int) -> tuple[int, Union[List[Dict[str, Any]], Dict[str, Any]]]:
         """Get subjects related to a person.
         
@@ -334,6 +450,11 @@ class BangumiClient:
         response = await self.client.get(f"/v0/users/{username}")
         
         return response.status_code, response.json()
+
+    async def get_user_avatar(self, username: str, params: Dict[str, Any]) -> tuple[int, Dict[str, Any]]:
+        """Get avatar URL for a user."""
+        response = await self.client.get(f"/v0/users/{username}/avatar", params=params)
+        return response.status_code, self._parse_redirect_response(response)
     
     async def get_me_info(self) -> tuple[int, Dict[str, Any]]:
         """Get current user's information."""
