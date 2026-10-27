@@ -7,6 +7,7 @@ type hints and the models in :mod:`bangumi_mcp.models`.
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
@@ -18,6 +19,10 @@ from bangumi_mcp.bangumi_client import BangumiClient
 from bangumi_mcp.prompts import register as register_prompts
 from bangumi_mcp.resources import register as register_resources
 from bangumi_mcp.tools import register_all
+
+# The MCP SDK configures logging; keep transport chatter out of server logs.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 SERVER_INSTRUCTIONS = (
     "Bangumi is a Chinese anime/manga/game database. Use `bangumi_search` to "

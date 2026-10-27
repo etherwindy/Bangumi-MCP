@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/github/license/etherwindy/Bangumi-MCP)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
-[![MCP](https://img.shields.io/badge/MCP-Server-orange)](https://modelcontextprotocol.io)
+[![MCP](https://img.shields.io/badge/MCP-2.x-orange)](https://modelcontextprotocol.io)
 
 [English Version](README.md)
 
@@ -10,227 +10,219 @@
   <img src="https://placehold.co/200x200/transparent/pink?font=Oswald&text=Bangumi\nM%20C%20P" alt="Bangumi MCP Logo" width="256" height="256">
 </p>
 
-
 <p align="center">
   一个可以访问 Bangumi API 的模型上下文协议（MCP）服务器
 </p>
 
-Bangumi MCP 是一个模型上下文协议（MCP）服务器，提供对 [Bangumi API](https://bangumi.github.io/api/) 的访问，允许用户搜索和获取有关动画、漫画和其他相关内容的信息。
+Bangumi MCP 让 MCP 客户端可以访问 [Bangumi](https://bgm.tv)（bangumi.tv）：
+动画、漫画、书籍、音乐、游戏、角色、人物、目录和个人收藏。
 
-## 功能
+本项目基于 **MCP Python SDK 2.3**（协议版本 **2026-07-28**），并跟随
+[Bangumi OpenAPI 文档](https://bangumi.github.io/api/) 的 **2026-07-24** 版本
+（内置在 `bangumi_mcp/dist.json`）。
 
-Bangumi MCP 服务器提供了一套全面的工具来与 Bangumi API 交互，包括：
+## 主要改进
 
-本项目跟随内置的 Bangumi OpenAPI 规格文件 `bangumi_mcp/dist.json`，当前适配 `2026-05-2` 版 API schema。项目要求 `mcp>=1.27.2`，并支持较新的 MCP 能力，包括工具输出 schema、结构化工具结果、工具 annotations 和 Streamable HTTP。
+- **11 个按意图划分的工具**，而不是每个 REST 接口一个工具。工具数量大幅减少，
+  但仍覆盖 Bangumi 47 个 API 路径下的全部 56 个操作。
+- **自动生成并校验的 schema**：输入来自 Python 类型注解，输出来自 Pydantic 模型。
+  客户端会收到 `outputSchema` 和 `structuredContent`，可以自行校验结果。
+- **MCP 2.x 新特性**：工具 annotations、缓存提示（cache hints）、Resources、
+  Prompts、进度通知、Streamable HTTP（有状态/无状态）以及兼容旧客户端的 SSE。
+- **更贴合 Bangumi API**：正确的 `filter.tag` 搜索参数、批量章节更新、token
+  scope 提示、限流重试，以及 token 过期时公开读取自动降级为匿名请求。
 
-### 日历和时间
+## 快速开始
 
-- `get_current_time`：获取当前时间
-- `get_calendar`：获取每周放送时间表
+```bash
+git clone https://github.com/etherwindy/Bangumi-MCP.git
+cd Bangumi-MCP
+uv sync
+uv run bangumi-mcp --help
+```
 
-### 条目工具
-
-- `search_subjects`：搜索条目，支持多种过滤器
-- `get_subjects`：按类型和分类浏览条目
-- `get_subject_info`：获取特定条目的详细信息
-- `get_subject_image`：获取条目图片 URL
-- `get_subject_persons`：获取条目的人物信息
-- `get_subject_characters`：获取条目的角色信息
-- `get_subject_relations`：获取相关条目
-
-### 剧集/章节工具
-
-- `get_episodes`：获取条目的剧集/章节信息
-- `get_episode_info`：获取特定剧集/章节的详细信息
-
-### 修订历史工具
-
-- `get_subject_revisions`：获取条目修订历史
-- `get_subject_revision_info`：获取条目修订详情
-- `get_episode_revisions`：获取章节修订历史
-- `get_episode_revision_info`：获取章节修订详情
-- `get_character_revisions`：获取角色修订历史
-- `get_character_revision_info`：获取角色修订详情
-- `get_person_revisions`：获取人物修订历史
-- `get_person_revision_info`：获取人物修订详情
-
-### 角色工具
-
-- `search_characters`：搜索角色
-- `get_character_info`：获取角色详细信息
-- `get_character_image`：获取角色图片 URL
-- `get_character_subjects`：获取与角色相关的条目
-- `get_character_persons`：获取与角色相关的人物
-- `post_character_collection`：收藏角色
-
-### 人物工具
-
-- `search_persons`：搜索人物
-- `get_person_info`：获取人物详细信息
-- `get_person_image`：获取人物图片 URL
-- `get_person_subjects`：获取与人物相关的条目
-- `get_person_characters`：获取与人物相关的角色
-- `post_person_collection`：收藏人物
-
-### 目录工具
-
-- `post_index`：为当前用户创建目录
-- `get_index_info`：获取目录信息
-- `put_index`：更新目录信息
-- `post_index_collection`：收藏目录
-- `delete_index_collection`：取消收藏目录
-- `get_index_subjects`：获取目录中的条目列表
-- `post_index_subject`：向目录添加条目
-- `put_index_subject`：更新目录中的条目信息
-- `delete_index_subject`：从目录删除条目
-
-### 用户工具
-
-- `get_user_info`：获取用户信息
-- `get_user_avatar`：获取用户头像 URL
-- `get_me_info`：获取当前用户信息
-
-### 收藏工具
-
-- `get_user_collections`：获取用户的条目收藏
-- `get_user_collection_info`：获取用户特定条目的收藏信息
-- `post_my_collection`：为当前用户收藏条目
-- `patch_my_collection`：为当前用户更新条目
-- `get_my_episode_collections`：获取当前用户的剧集/章节收藏
-- `patch_my_episode_collections`：更新当前用户的剧集/章节收藏
-- `get_my_episode_collection_info`：获取当前用户特定剧集/章节的收藏信息
-- `put_my_episode_collection_info`：更新当前用户的剧集/章节收藏
-- `get_user_character_collections`：获取用户的角色收藏
-- `get_user_character_collection_info`：获取用户特定角色的收藏信息
-- `get_user_person_collections`：获取用户的人物收藏
-- `get_user_person_collection_info`：获取用户特定人物的收藏信息
-
-## 安装
-
-1. 克隆仓库：
-
-   ```bash
-   git clone https://github.com/etherwindy/Bangumi-MCP.git
-   cd Bangumi-MCP
-   ```
-
-2. 安装依赖：
-
-   推荐使用 uv。本项目已包含标准构建配置，执行同步后即可使用 `bangumi-mcp` 命令：
-
-   ```bash
-   uv sync
-   uv run bangumi-mcp --help
-   ```
-
-   也可以使用 `uv pip install -e .` 安装到其他环境中。
-
-## 服务器配置
-
-Bangumi MCP 服务器需要 Bangumi API 令牌才能完全发挥功能。如果使用 SSE 或者 streamable HTTP，你需要在服务启动前设置此令牌：
-
-### 方法 1: 使用 .env 文件（推荐）
-
-在项目根目录下创建 `.env` 文件，并添加你的 Bangumi API 令牌：
+配置 Bangumi 访问令牌（公开读取可以不配，`/v0/me` 和所有写操作必须配置）：
 
 ```env
+# .env
 BANGUMI_API_TOKEN=your_api_token_here
 ```
 
-### 方法 2: 使用环境变量
+令牌在 <https://next.bgm.tv/demo/access-token> 生成。当前 Bangumi 规范为写接口
+标注了 OAuth scope：
 
-直接在终端中设置环境变量：
+| Scope              | 用途                                              |
+| ------------------ | ------------------------------------------------- |
+| `write:collection` | 条目/章节收藏，收藏角色、人物、目录               |
+| `write:indices`    | 创建/编辑目录及其条目                             |
 
-```bash
-export BANGUMI_API_TOKEN=your_api_token_here
-```
+返回 403 时会附带提示，说明缺少哪个 scope。
 
-在 Windows 上，使用：
+## 工具
 
-```cmd
-set BANGUMI_API_TOKEN=your_api_token_here
-```
+所有工具都带有 `readOnlyHint`、`destructiveHint`、`idempotentHint` 和
+`openWorldHint` 注解。
+
+| 工具 | 功能 | 对应接口 |
+| ---- | ---- | -------- |
+| `bangumi_search` | 按关键词搜索条目、角色或人物。条目搜索支持类型、标签、元标签、放送日期、评分、评分人数、排名和 NSFW 过滤。 | `POST /v0/search/{subjects,characters,persons}` |
+| `bangumi_browse_subjects` | 按类型/分类/年份/月份/平台/系列浏览条目，可按日期或排名排序。 | `GET /v0/subjects` |
+| `bangumi_get_subject` | 条目详情（简介、infobox、评分、标签、图片、收藏统计）。`include` 可一次附带角色、人物、相关条目和/或章节。 | `GET /v0/subjects/{id}` 及相关接口 |
+| `bangumi_get_episodes` | 列出条目章节，或获取单个章节。 | `GET /v0/episodes`, `GET /v0/episodes/{id}` |
+| `bangumi_get_entity` | 角色或人物详情；`include` 可附带其参与作品以及关联角色/人物。 | `GET /v0/{characters,persons}/{id}` 及相关接口 |
+| `bangumi_get_revisions` | 获取条目/章节/角色/人物的修订历史，或单条修订详情。 | `GET /v0/revisions/*` |
+| `bangumi_get_user` | 按用户名获取用户资料；省略 `username` 时获取当前登录用户。 | `GET /v0/users/{username}`, `GET /v0/me` |
+| `bangumi_get_collections` | 读取任意用户的条目/角色/人物收藏，以及当前用户的章节进度。 | `GET /v0/users/*/collections*` |
+| `bangumi_update_collection` | 写入收藏状态：条目状态/评分/评论/标签/进度，单集或批量章节状态，收藏/取消收藏角色、人物、目录。 | `POST/PATCH /v0/users/-/collections*`, `POST/DELETE /v0/*/collect` |
+| `bangumi_manage_index` | 创建/读取/更新目录，列出/添加/修改/删除目录条目，收藏/取消收藏目录。 | `/v0/indices*` |
+| `bangumi_get_calendar` | 每周放送时间表。 | `GET /calendar` |
+
+图片 URL 已经包含在条目/角色/人物/用户数据里，因此不再单独提供图片工具。
+`bangumi_get_subject(subject_id=..., include=[...])` 取代了旧的
+`get_subject_info` / `get_subject_persons` / `get_subject_characters` /
+`get_subject_relations` 系列工具。
+
+### 从 0.1.x 迁移
+
+旧的 55 个接口型工具已合并为上面的 11 个工具，功能没有缺失。
+
+| 旧工具 | 新工具 |
+| ------ | ------ |
+| `search_subjects`, `search_characters`, `search_persons` | `bangumi_search` |
+| `get_subjects` | `bangumi_browse_subjects` |
+| `get_subject_info`, `get_subject_image`, `get_subject_persons`, `get_subject_characters`, `get_subject_relations` | `bangumi_get_subject`（`include=[...]`，图片在返回数据中） |
+| `get_episodes`, `get_episode_info` | `bangumi_get_episodes`（`subject_id` 或 `episode_id`） |
+| `get_character_info`, `get_character_image`, `get_character_subjects`, `get_character_persons` | `bangumi_get_entity`（`entity=character`, `include=[...]`） |
+| `get_person_info`, `get_person_image`, `get_person_subjects`, `get_person_characters` | `bangumi_get_entity`（`entity=person`, `include=[...]`） |
+| 8 个 `get_*_revision*` 工具 | `bangumi_get_revisions` |
+| `get_user_info`, `get_user_avatar`, `get_me_info` | `bangumi_get_user` |
+| `get_user_collections`, `get_user_collection_info`, `get_my_episode_collections`, `get_my_episode_collection_info`, `get_user_character_collections*`, `get_user_person_collections*` | `bangumi_get_collections` |
+| `post_my_collection`, `patch_my_collection`, `patch_my_episode_collections`, `put_my_episode_collection_info`, `post/delete_character_collection`, `post/delete_person_collection`, `post/delete_index_collection` | `bangumi_update_collection` |
+| 全部 9 个目录工具 | `bangumi_manage_index`（`action=...`） |
+| `get_calendar` | `bangumi_get_calendar` |
+| `get_current_time` | 已移除（宿主本身知道当前时间） |
+
+## 使用的 MCP 特性
+
+- **SDK 2.x / `MCPServer`**：高层服务器类（原 `FastMCP`）。处理函数是带类型的
+  普通函数，schema 由类型注解生成，不再手写维护。
+- **协议 2026-07-28**：现代连接不再有握手和会话；支持 `tools/list` 与
+  `resources/read` 缓存提示以及按请求路由的 header。同一进程仍兼容 2025 版
+  协议客户端（包括旧版 HTTP+SSE）。
+- **结构化输出**：每个工具都声明 `outputSchema`，结果同时返回文本和
+  `structuredContent`。客户端会校验结构化内容，因此 Bangumi 中可空的字段都被
+  建模为 nullable，并在输出时去掉 `null`。
+- **Annotations 与标题**：每个工具都有可读标题和 MCP 提示
+  （`readOnlyHint`、`destructiveHint`、`idempotentHint`、`openWorldHint`）。
+- **Resources**：`bangumi://calendar`，以及
+  `bangumi://subject/{id}`、`bangumi://character/{id}`、
+  `bangumi://person/{id}`、`bangumi://user/{username}` 模板，客户端可以不调用
+  工具直接读取条目数据。
+- **Prompts**：`bangumi_recommend`、`bangumi_subject_deep_dive`、
+  `bangumi_backlog_review` 提供现成的工作流模板。
+- **进度通知**：`bangumi_get_subject`、`bangumi_get_entity` 在并发加载关联
+  数据时会报告进度。
+- **传输控制**：`--stateless` 使用无会话的 Streamable HTTP，
+  `--json-response` 返回普通 JSON 而不是 SSE 流。
+
+## 配置
+
+| 环境变量 | 默认值 | 说明 |
+| -------- | ------ | ---- |
+| `BANGUMI_API_TOKEN` | 未设置 | Bangumi 访问令牌。公开读取无需令牌。 |
+| `BANGUMI_API_BASE_URL` | `https://api.bgm.tv` | 覆盖 API 根地址（代理/测试）。 |
+
+工作目录下的 `.env` 会自动加载。如果配置了但已过期的 token，公开读取会自动
+匿名重试；只有需要认证的调用会失败，并给出令牌页面提示。
 
 ## 使用方法
 
 ### STDIO
 
-直接将 JSON 配置导入你的 MCP 客户端应用，例如 Cherry Studio:
-
 ```json
 {
-    "mcpServers": {
-        "Bangumi-MCP": {
-            "command": "uv",
-            "args": [
-                "--directory",
-                "{your_path_to_the_folder}/Bangumi-MCP",
-                "run",
-                "bangumi-mcp"
-            ],
-            "env": {
-                "BANGUMI_API_TOKEN": "your_token_here"
-            }
-        }
-    }
-}
-```
-
-### SSE
-
-默认情况下，服务器将在 `localhost:18080` 上运行。可以使用 `--host` 和 `--port` 参数指定不同的主机和端口：
-
-```bash
-cd Bangumi-MCP
-uv run bangumi-mcp --mode=sse --host localhost --port 18080
-```
-
-配置你的 MCP 客户端应用，例如：
-
-```json
-{
-   "mcpServers": {
-      "Bangumi-MCP": {
-         "type": "sse",
-         "url": "http://localhost:18080/sse"
+  "mcpServers": {
+    "Bangumi-MCP": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/Bangumi-MCP", "run", "bangumi-mcp"],
+      "env": {
+        "BANGUMI_API_TOKEN": "your_token_here"
       }
-   }
+    }
+  }
 }
 ```
 
 ### Streamable HTTP
 
-默认情况下，服务器将在 `localhost:18080` 上运行。可以使用 `--host` 和 `--port` 参数指定不同的主机和端口：
-
 ```bash
-cd Bangumi-MCP
 uv run bangumi-mcp --mode=streamable_http --host localhost --port 18080
 ```
 
-配置你的 MCP 客户端应用，例如：
-
 ```json
 {
-   "mcpServers": {
-      "Bangumi-MCP": {
-         "type": "streamableHttp",
-         "url": "http://localhost:18080/mcp/"
-      }
-   }
+  "mcpServers": {
+    "Bangumi-MCP": {
+      "type": "streamableHttp",
+      "url": "http://localhost:18080/mcp"
+    }
+  }
 }
 ```
 
-## 现代 MCP 支持
+添加 `--stateless` 可完全禁用服务端会话，添加 `--json-response` 可接收普通
+JSON 响应。
 
-- 当工具返回结构化 JSON 数据时，响应会包含 `structuredContent`，同时保留可读的 JSON 文本以兼容普通客户端。
-- 工具元数据包含 MCP annotations，例如 `readOnlyHint`、`destructiveHint`、`idempotentHint` 和 `openWorldHint`。
-- 服务支持 STDIO、SSE 和 Streamable HTTP 三种传输方式。
-- 会修改当前用户数据的工具需要有效的 `BANGUMI_API_TOKEN`；Bangumi 允许公开访问的只读接口可不带 token 使用。
+### SSE（旧客户端）
+
+```bash
+uv run bangumi-mcp --mode=sse --host localhost --port 18080
+```
+
+```json
+{
+  "mcpServers": {
+    "Bangumi-MCP": {
+      "type": "sse",
+      "url": "http://localhost:18080/sse"
+    }
+  }
+}
+```
+
+SSE 仅用于仍使用 2025 版握手的旧客户端，新客户端建议使用 Streamable HTTP。
+
+## 开发
+
+```bash
+uv sync
+uv run pytest
+uv run python scripts/update_openapi.py --check   # 检查内置 schema 是否过期
+uv run python scripts/update_openapi.py           # 更新 schema
+```
+
+目录结构：
+
+```text
+bangumi_mcp/
+  __main__.py        CLI（stdio / sse / streamable_http）
+  mcp_server.py      MCPServer 工厂、传输层、缓存提示
+  bangumi_client.py  httpx 客户端、重试、错误映射
+  models.py          用于输出 schema 的 Pydantic 模型
+  resources.py       MCP Resources
+  prompts.py         MCP Prompts
+  tools/             按工具组拆分的模块
+scripts/update_openapi.py
+tests/
+```
+
+更新 OpenAPI 文档后，请检查 diff，并在接口或数据结构变化时同步修改
+`bangumi_mcp/models.py`、`bangumi_mcp/bangumi_client.py` 和工具描述。
 
 ## 鸣谢
 
-本项目在构建过程中得到了 Qwen3-Coder 和 Claude Sonnet 4 的协助。
+项目最初在 Qwen3-Coder 和 Claude Sonnet 4 的协助下完成。
 
 ## 许可证
 
-该项目采用 MIT 许可证。有关详细信息，请参见 [LICENSE](LICENSE) 文件。
+MIT，详见 [LICENSE](LICENSE)。

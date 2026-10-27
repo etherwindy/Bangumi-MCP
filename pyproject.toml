@@ -1,7 +1,7 @@
 [project]
 name = "Bangumi-MCP"
 version = "0.2.0"
-description = "MCP server for Bangumi API"
+description = "MCP server for the Bangumi API (MCP SDK 2.x)"
 readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
     { name = "etherwindy", email = "1123725603@qq.com" }
@@ -21,8 +21,18 @@ bangumi-mcp = "bangumi_mcp.__main__:main"
 requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["bangumi_mcp*"]
+
 [tool.setuptools.package-data]
 bangumi_mcp = ["*.json"]
 
 [dependency-groups]
-dev = []
+dev = [
+    "anyio>=4.9",
+    "pytest>=8.4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -35,8 +35,8 @@ def register(mcp: MCPServer, client: BangumiClient) -> None:
             "Work with Bangumi indices (user-curated subject lists): create, "
             "read, rename, add/edit/remove subjects, list subjects and "
             "collect/uncollect. Every action takes `index_id` except `create`; "
-            "adding or editing subjects takes `subject_id`. Requires a token "
-            "with write:indices for write actions."
+            "adding or editing subjects takes `subject_id`. Index edits require "
+            "write:indices; collecting an index requires write:collection."
         ),
         annotations=DESTRUCTIVE,
     )

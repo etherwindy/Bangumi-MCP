@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/github/license/etherwindy/Bangumi-MCP)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
-[![MCP](https://img.shields.io/badge/MCP-Server-orange)](https://modelcontextprotocol.io)
+[![MCP](https://img.shields.io/badge/MCP-2.x-orange)](https://modelcontextprotocol.io)
 
 [中文版本](README_zh.md)
 
@@ -11,225 +11,233 @@
 </p>
 
 <p align="center">
-  A Model Context Protocol (MCP) server for accessing Bangumi API
+  A Model Context Protocol server for the Bangumi API
 </p>
 
-Bangumi MCP is a Model Context Protocol (MCP) server that provides access to the [Bangumi API](https://bangumi.github.io/api/), allowing users to search for and retrieve information about anime, manga, and other related content.
+Bangumi MCP gives MCP clients access to [Bangumi](https://bgm.tv) (bgm.tv):
+anime, manga, books, music, games, characters, staff, indices and personal
+collections.
 
-## Features
+The project is built on the **MCP Python SDK 2.3** (protocol revision
+**2026-07-28**) and tracks the **2026-07-24** revision of the
+[Bangumi OpenAPI document](https://bangumi.github.io/api/) bundled at
+`bangumi_mcp/dist.json`.
 
-The Bangumi MCP server provides a comprehensive set of tools for interacting with the Bangumi API, including:
+## Highlights
 
-The project tracks the Bangumi OpenAPI schema bundled in `bangumi_mcp/dist.json` and currently targets the `2026-05-2` API schema. It requires `mcp>=1.27.2` and uses modern MCP features such as tool output schemas, structured tool results, tool annotations, and Streamable HTTP.
+- **11 intent-based tools** instead of one tool per REST endpoint. Each tool
+  covers a whole workflow, so the catalogue stays small without losing access
+  to any of the 56 operations exposed by the 47 Bangumi API paths.
+- **Generated, validated schemas**: inputs come from Python type hints and
+  outputs from Pydantic models. Clients receive `outputSchema` and
+  `structuredContent` and can validate results themselves.
+- **MCP 2.x features**: tool annotations, cache hints, resources, prompts,
+  progress reporting, Streamable HTTP (stateful or stateless) and legacy SSE.
+- **Bangumi-aware**: correct `filter.tag` search payloads, batched episode
+  updates, token-scope hints, retries for rate limits and public reads that
+  keep working when the configured token has expired.
 
-### Calendar and Time
+## Quick start
 
-- `get_current_time`: Get the current time
-- `get_calendar`: Get the weekly broadcast schedule
+```bash
+git clone https://github.com/etherwindy/Bangumi-MCP.git
+cd Bangumi-MCP
+uv sync
+uv run bangumi-mcp --help
+```
 
-### Subject Tools
-
-- `search_subjects`: Search for subjects with various filters
-- `get_subjects`: Browse subjects by type and category
-- `get_subject_info`: Get detailed information about a specific subject
-- `get_subject_image`: Get a subject image URL
-- `get_subject_persons`: Get person information for a subject
-- `get_subject_characters`: Get character information for a subject
-- `get_subject_relations`: Get related subjects
-
-### Episode Tools
-
-- `get_episodes`: Get episode information for a subject
-- `get_episode_info`: Get detailed information about a specific episode
-
-### Revision Tools
-
-- `get_subject_revisions`: Get subject revision history
-- `get_subject_revision_info`: Get subject revision details
-- `get_episode_revisions`: Get episode revision history
-- `get_episode_revision_info`: Get episode revision details
-- `get_character_revisions`: Get character revision history
-- `get_character_revision_info`: Get character revision details
-- `get_person_revisions`: Get person revision history
-- `get_person_revision_info`: Get person revision details
-
-### Character Tools
-
-- `search_characters`: Search for characters
-- `get_character_info`: Get detailed character information
-- `get_character_image`: Get a character image URL
-- `get_character_subjects`: Get subjects related to a character
-- `get_character_persons`: Get persons related to a character
-- `post_character_collection`: Collect a character
-
-### Person Tools
-
-- `search_persons`: Search for persons
-- `get_person_info`: Get detailed person information
-- `get_person_image`: Get a person image URL
-- `get_person_subjects`: Get subjects related to a person
-- `get_person_characters`: Get characters related to a person
-- `post_person_collection`: Collect a person
-
-### Index Tools
-
-- `post_index`: Create an index for the current user
-- `get_index_info`: Get index information
-- `put_index`: Update index information
-- `post_index_collection`: Collect an index
-- `delete_index_collection`: Uncollect an index
-- `get_index_subjects`: Get subjects in an index
-- `post_index_subject`: Add a subject to an index
-- `put_index_subject`: Update a subject in an index
-- `delete_index_subject`: Delete a subject from an index
-
-### User Tools
-
-- `get_user_info`: Get user information
-- `get_user_avatar`: Get a user avatar URL
-- `get_me_info`: Get current user information
-
-### Collection Tools
-
-- `get_user_collections`: Get user's subject collections
-- `get_user_collection_info`: Get user's collection info for a specific subject
-- `post_my_collection`: Collect a subject for the current user
-- `patch_my_collection`: Update a subject collection for the current user
-- `get_my_episode_collections`: Get current user's episode collections
-- `patch_my_episode_collections`: Update current user's episode collection
-- `get_my_episode_collection_info`: Get current user's episode collection info for a specific episode
-- `put_my_episode_collection_info`: Update current user's episode collection
-- `get_user_character_collections`: Get user's character collections
-- `get_user_character_collection_info`: Get user's character collection info for a specific character
-- `get_user_person_collections`: Get user's person collections
-- `get_user_person_collection_info`: Get user's person collection info for a specific person
-
-## Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/etherwindy/Bangumi-MCP.git
-   cd Bangumi-MCP
-   ```
-
-2. Install dependencies:
-
-   It is recommended to use uv. The project includes a standard build configuration, so the `bangumi-mcp` console script is available after syncing:
-
-   ```bash
-   uv sync
-   uv run bangumi-mcp --help
-   ```
-
-   You can also install it into another environment with `uv pip install -e .`.
-
-## Server Configuration
-
-The Bangumi MCP server requires a Bangumi API token for full functionality. If you use SSE or streamable HTTP, you need to configure this token before the server starts:
-
-### Method 1: Using a .env file (Recommended)
-
-Create a `.env` file in the project root directory with your Bangumi API token:
+Set a Bangumi access token (optional for public reads, required for `/v0/me`
+and every write):
 
 ```env
+# .env
 BANGUMI_API_TOKEN=your_api_token_here
 ```
 
-### Method 2: Using Environment Variables
+Create tokens at <https://next.bgm.tv/demo/access-token>. The current Bangumi
+spec marks mutating endpoints with OAuth scopes:
 
-Set the environment variable directly in your terminal:
+| Scope              | Needed for                                                   |
+| ------------------ | ------------------------------------------------------------ |
+| `write:collection` | subject/episode collections, collect character/person/index  |
+| `write:indices`    | creating/editing indices and their subjects                  |
 
-```bash
-export BANGUMI_API_TOKEN=your_api_token_here
-```
+A 403 answer includes a hint telling you which scope is missing.
 
-On Windows, use:
+## Tools
 
-```cmd
-set BANGUMI_API_TOKEN=your_api_token_here
-```
+All tools are annotated with `readOnlyHint`, `destructiveHint`,
+`idempotentHint` and `openWorldHint`.
+
+| Tool | What it does | Bangumi endpoints |
+| ---- | ------------ | ----------------- |
+| `bangumi_search` | Search subjects, characters or persons by keyword. Subject search supports type, tags, meta tags, air date, rating, rating count, rank and NSFW filters. | `POST /v0/search/{subjects,characters,persons}` |
+| `bangumi_browse_subjects` | Browse subjects by type/category/year/month/platform/series, sorted by date or rank. | `GET /v0/subjects` |
+| `bangumi_get_subject` | Subject detail (summary, infobox, rating, tags, images, collection counts). `include` adds characters, staff, related subjects and/or episodes in one call. | `GET /v0/subjects/{id}` + related endpoints |
+| `bangumi_get_episodes` | List a subject's episodes or fetch one episode. | `GET /v0/episodes`, `GET /v0/episodes/{id}` |
+| `bangumi_get_entity` | Character or person detail; `include` adds their works and linked characters/persons. | `GET /v0/{characters,persons}/{id}` + related endpoints |
+| `bangumi_get_revisions` | Revision history or one revision's diff payload for subject/episode/character/person. | `GET /v0/revisions/*` |
+| `bangumi_get_user` | A user profile by username, or the authenticated user when `username` is omitted. | `GET /v0/users/{username}`, `GET /v0/me` |
+| `bangumi_get_collections` | Read subject/character/person collections (any user) and the authenticated user's episode progress. | `GET /v0/users/*/collections*` |
+| `bangumi_update_collection` | Write collection state: subject status/rating/comment/tags/progress, batch or single episode status, collect/uncollect character/person/index. | `POST/PATCH /v0/users/-/collections*`, `POST/DELETE /v0/*/collect` |
+| `bangumi_manage_index` | Create/read/update indices, list/add/edit/remove index subjects, collect/uncollect an index. | `/v0/indices*` |
+| `bangumi_get_calendar` | Weekly broadcast schedule of currently airing anime. | `GET /calendar` |
+
+Image URLs are part of the subject/character/person/user payloads, so there is
+no separate image tool. `bangumi_get_subject(subject_id=..., include=[...])`
+replaces the old `get_subject_info` / `get_subject_persons` /
+`get_subject_characters` / `get_subject_relations` family.
+
+### Migrating from 0.1.x
+
+The 55 endpoint tools were consolidated into the 11 tools above. No
+functionality was dropped.
+
+| Old tools | New tool |
+| --------- | -------- |
+| `search_subjects`, `search_characters`, `search_persons` | `bangumi_search` |
+| `get_subjects` | `bangumi_browse_subjects` |
+| `get_subject_info`, `get_subject_image`, `get_subject_persons`, `get_subject_characters`, `get_subject_relations` | `bangumi_get_subject` (`include=[...]`; images are in the payload) |
+| `get_episodes`, `get_episode_info` | `bangumi_get_episodes` (`subject_id` or `episode_id`) |
+| `search_characters`, `search_persons` | `bangumi_search` (`entity=character|person`) |
+| `get_character_info`, `get_character_image`, `get_character_subjects`, `get_character_persons` | `bangumi_get_entity` (`entity=character`, `include=[...]`) |
+| `get_person_info`, `get_person_image`, `get_person_subjects`, `get_person_characters` | `bangumi_get_entity` (`entity=person`, `include=[...]`) |
+| `get_subject_revisions`, `get_subject_revision_info` and the six other revision tools | `bangumi_get_revisions` |
+| `get_user_info`, `get_user_avatar`, `get_me_info` | `bangumi_get_user` |
+| `get_user_collections`, `get_user_collection_info`, `get_my_episode_collections`, `get_my_episode_collection_info`, `get_user_character_collections*`, `get_user_person_collections*` | `bangumi_get_collections` |
+| `post_my_collection`, `patch_my_collection`, `patch_my_episode_collections`, `put_my_episode_collection_info`, `post/delete_character_collection`, `post/delete_person_collection`, `post/delete_index_collection` | `bangumi_update_collection` |
+| All nine index tools | `bangumi_manage_index` (`action=...`) |
+| `get_calendar` | `bangumi_get_calendar` |
+| `get_current_time` | removed — hosts already know the current time |
+
+## MCP features in use
+
+- **SDK 2.x / `MCPServer`** — the high-level server class (formerly
+  `FastMCP`). Handlers are typed functions; schemas are generated from type
+  hints, not maintained by hand.
+- **Protocol 2026-07-28** — no handshake and no session on modern
+  connections, `tools/list` cache hints, `resources/read` cache hints and
+  per-request routing headers. The same process still serves 2025-era clients
+  (including the legacy HTTP+SSE transport).
+- **Structured output** — each tool declares an `outputSchema`; results are
+  returned as both text and `structuredContent`. The client validates
+  structured content, which is why nullable Bangumi fields are modelled as
+  nullable and `null` values are dropped from payloads.
+- **Annotations and titles** — every tool carries human-readable titles and
+  MCP hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`,
+  `openWorldHint`).
+- **Resources** — `bangumi://calendar` plus `bangumi://subject/{id}`,
+  `bangumi://character/{id}`, `bangumi://person/{id}` and
+  `bangumi://user/{username}` templates let clients attach Bangumi data
+  without tool calls.
+- **Prompts** — `bangumi_recommend`, `bangumi_subject_deep_dive` and
+  `bangumi_backlog_review` provide ready-made workflows.
+- **Progress** — multi-fetch tools (`bangumi_get_subject`,
+  `bangumi_get_entity`) report progress while loading related sections.
+- **Transport control** — `--stateless` for session-less Streamable HTTP and
+  `--json-response` for clients that prefer JSON over SSE streams.
+
+## Configuration
+
+| Variable | Default | Meaning |
+| -------- | ------- | ------- |
+| `BANGUMI_API_TOKEN` | unset | Bangumi access token. Public reads work without it. |
+| `BANGUMI_API_BASE_URL` | `https://api.bgm.tv` | Override the API root (proxy/testing). |
+
+`.env` files in the working directory are loaded automatically. If a token is
+present but expired, public reads automatically retry anonymously; only
+authenticated calls fail, with a hint pointing at the token page.
 
 ## Usage
 
 ### STDIO
 
-Import this JSON config into your MCP client application, such as Cherry Studio:
-
 ```json
 {
-    "mcpServers": {
-        "Bangumi-MCP": {
-            "command": "uv",
-            "args": [
-                "--directory",
-                "{your_path_to_the_folder}/Bangumi-MCP",
-                "run",
-                "bangumi-mcp"
-            ],
-            "env": {
-                "BANGUMI_API_TOKEN": "your_token_here"
-            }
-        }
-    }
-}
-```
-
-### SSE
-
-By default, the server will run on `localhost:18080`. You can specify a different host and port using the `--host` and `--port` arguments:
-
-```bash
-cd Bangumi-MCP
-uv run bangumi-mcp --mode=sse --host localhost --port 18080
-```
-
-Configure your MCP client application, for example:
-
-```json
-{
-   "mcpServers": {
-      "Bangumi-MCP": {
-         "type": "sse",
-         "url": "http://localhost:18080/sse"
+  "mcpServers": {
+    "Bangumi-MCP": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/Bangumi-MCP", "run", "bangumi-mcp"],
+      "env": {
+        "BANGUMI_API_TOKEN": "your_token_here"
       }
-   }
+    }
+  }
 }
 ```
 
 ### Streamable HTTP
 
-By default, the server will run on `localhost:18080`. You can specify a different host and port using the `--host` and `--port` arguments:
-
 ```bash
-cd Bangumi-MCP
 uv run bangumi-mcp --mode=streamable_http --host localhost --port 18080
 ```
 
-Configure your MCP client application, for example:
-
 ```json
 {
-   "mcpServers": {
-      "Bangumi-MCP": {
-         "type": "streamableHttp",
-         "url": "http://localhost:18080/mcp/"
-      }
-   }
+  "mcpServers": {
+    "Bangumi-MCP": {
+      "type": "streamableHttp",
+      "url": "http://localhost:18080/mcp"
+    }
+  }
 }
 ```
 
-## Modern MCP Support
+Add `--stateless` to avoid server-side sessions entirely, or
+`--json-response` to receive plain JSON responses.
 
-- Tool responses include `structuredContent` when the underlying tool returns structured JSON data, while still including readable JSON text for compatibility.
-- Tool metadata includes MCP annotations such as `readOnlyHint`, `destructiveHint`, `idempotentHint`, and `openWorldHint`.
-- The server supports STDIO, SSE, and Streamable HTTP transports.
-- Mutating tools require a valid `BANGUMI_API_TOKEN`; read-only public API tools can be used without a token where Bangumi allows it.
+### SSE (legacy clients)
+
+```bash
+uv run bangumi-mcp --mode=sse --host localhost --port 18080
+```
+
+```json
+{
+  "mcpServers": {
+    "Bangumi-MCP": {
+      "type": "sse",
+      "url": "http://localhost:18080/sse"
+    }
+  }
+}
+```
+
+SSE exists for clients that still use the 2025-era handshake. New clients
+should use Streamable HTTP.
+
+## Development
+
+```bash
+uv sync
+uv run pytest
+uv run python scripts/update_openapi.py --check   # is the bundled schema stale?
+uv run python scripts/update_openapi.py           # refresh it
+```
+
+Layout:
+
+```text
+bangumi_mcp/
+  __main__.py        CLI (stdio / sse / streamable_http)
+  mcp_server.py      MCPServer factory, transports, cache hints
+  bangumi_client.py  httpx client, retries, error mapping
+  models.py          Pydantic models used for output schemas
+  resources.py       MCP resources
+  prompts.py         MCP prompts
+  tools/             one module per tool group
+scripts/update_openapi.py
+tests/
+```
+
+When refreshing the OpenAPI document, review the diff and update
+`bangumi_mcp/models.py`, `bangumi_client.py` and the tool descriptions if an
+endpoint or payload changed.
 
 ## Acknowledgements
 
-This project was built with the assistance of Qwen3-Coder and Claude Sonnet 4.
+Originally built with the assistance of Qwen3-Coder and Claude Sonnet 4.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
