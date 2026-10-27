@@ -48,7 +48,9 @@ async def get_calendar(arguments):
     """
     status_code, calendar = await bangumi_client.get_calendar()
 
-    return {"calendar": calendar}
+    # Some items have a null cover image, which would violate the advertised
+    # output schema and fail structured-content validation in MCP 2.x clients.
+    return remove_null_items({"calendar": calendar})
 
 
 async def search_subjects(arguments):

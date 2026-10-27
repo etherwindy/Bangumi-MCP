@@ -1,39 +1,36 @@
-"""MCP server for Bangumi API."""
+"""MCP server wiring for Bangumi-MCP.
 
-import asyncio
+The project runs on the MCP Python SDK 2.x. The low-level ``Server`` is used
+here because the tool catalogue is generated from the Bangumi OpenAPI document
+and therefore needs full control over input/output JSON Schemas.
+"""
+
+from __future__ import annotations
+
 import json
 import logging
 from typing import Any, Dict, List, Optional
 
 import mcp.types as types
+import uvicorn
 from mcp.server import Server
-from mcp.server.models import InitializationOptions
-from mcp.server.stdio import stdio_server
 from mcp.server.sse import SseServerTransport
-from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
-from mcp.server.streamable_http import StreamableHTTPServerTransport
+from mcp.server.stdio import stdio_server
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.routing import Mount, Route
-from starlette.types import Receive, Scope, Send
-from collections.abc import AsyncIterator
-import contextlib
-import uvicorn
 
-from .tool_list import tool_list  # Import tool list from tool_list.py
-from . import tools  # Import all tools from tools.py
+from . import tools
+from .tool_list import tool_list
 
-# Set up logging
 logger = logging.getLogger(__name__)
 
 SERVER_INSTRUCTIONS = (
     "Bangumi-MCP exposes Bangumi API tools for searching and reading subjects, "
     "episodes, characters, persons, indices, revisions, users, and collections. "
-    "Tools that modify authenticated user data are annotated as mutating."
+    "Tools that modify authenticated user data are annotated as mutating and "
+    "require a Bangumi API token with the matching write scope."
 )
-
-# Create server instance
-server = Server("Bangumi-MCP", version="0.1.0", instructions=SERVER_INSTRUCTIONS)
 
 
 def _is_content_list(result: Any) -> bool:
@@ -55,163 +52,119 @@ def _to_call_tool_result(result: Any, is_error: bool = False) -> types.CallToolR
 
     if _is_content_list(result):
         text_errors = [
-            item.text for item in result
+            item.text
+            for item in result
             if isinstance(item, types.TextContent) and item.text.startswith("Error:")
         ]
-        return types.CallToolResult(content=result, isError=is_error or bool(text_errors))
+        return types.CallToolResult(
+            content=result, is_error=is_error or bool(text_errors)
+        )
 
     if isinstance(result, dict):
         is_api_error = "title" in result and (
             "description" in result or "details" in result or "request_id" in result
         )
         return types.CallToolResult(
-            content=[types.TextContent(
-                type="text",
-                text=json.dumps(result, ensure_ascii=False, indent=2)
-            )],
-            structuredContent=result,
-            isError=is_error or is_api_error,
+            content=[
+                types.TextContent(
+                    type="text",
+                    text=json.dumps(result, ensure_ascii=False, indent=2),
+                )
+            ],
+            structured_content=result,
+            is_error=is_error or is_api_error,
         )
 
     text = json.dumps(result, ensure_ascii=False, indent=2)
     return types.CallToolResult(
         content=[types.TextContent(type="text", text=text)],
-        isError=is_error,
+        is_error=is_error,
     )
 
-@server.list_tools()
-async def handle_list_tools() -> List[types.Tool]:
-    """
-    Handle tool listing.
-    Returns:
-        List of available tools.
-    """
-    return tool_list
+
+async def _handle_list_tools(
+    ctx: Any, params: Optional[types.PaginatedRequestParams]
+) -> types.ListToolsResult:
+    """Return the complete tool catalogue (no pagination needed)."""
+    return types.ListToolsResult(tools=tool_list)
 
 
-@server.call_tool()
-async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]]) -> types.CallToolResult:
-    """
-    Handle tool calls.
-    Args:
-        name: The name of the tool to call.
-        arguments: Arguments for the tool.
-    Returns:
-        List of TextContent with the tool's output.
-    Raises:
-        Exception: If the tool does not exist or an error occurs.
-    """
-
+async def _handle_call_tool(
+    ctx: Any, params: types.CallToolRequestParams
+) -> types.CallToolResult:
+    """Dispatch a tool call to the matching function in ``tools``."""
+    name = params.name
+    arguments: Dict[str, Any] = params.arguments or {}
     try:
-        if hasattr(tools, name):
-            tool = getattr(tools, name)
-            # 如果工具是异步函数，使用 await 调用
-            if asyncio.iscoroutinefunction(tool):
-                return _to_call_tool_result(await tool(arguments))
-            else:
-                return _to_call_tool_result(
-                    [types.TextContent(type="text", text="Error: Tool function is not async")],
-                    is_error=True,
-                )
-        else:
+        tool = getattr(tools, name, None)
+        if tool is None:
             return _to_call_tool_result(
                 [types.TextContent(type="text", text=f"Unknown tool: {name}")],
                 is_error=True,
             )
-            
-    except Exception as e:
-        logger.error(f"Error in tool {name}: {e}")
+        result = await tool(arguments)
+        return _to_call_tool_result(result)
+    except Exception as exc:  # noqa: BLE001 - surface the message to the model
+        logger.exception("Error in tool %s", name)
         return _to_call_tool_result(
-            [types.TextContent(type="text", text=f"Error: {str(e)}")],
+            [types.TextContent(type="text", text=f"Error: {exc}")],
             is_error=True,
         )
 
 
-async def stdio():
-    """
-    Main entry point for the MCP server using stdio transport.
-    Initializes the Bangumi client and starts the server.
-    This is useful for testing or running in environments where standard input/output is available.
-    """
+# Handlers are passed to the constructor in MCP SDK 2.x; the decorator form of
+# v1 is gone. The server still speaks both protocol eras.
+server = Server(
+    "Bangumi-MCP",
+    version="0.2.0",
+    instructions=SERVER_INSTRUCTIONS,
+    on_list_tools=_handle_list_tools,
+    on_call_tool=_handle_call_tool,
+)
+
+
+async def stdio() -> None:
+    """Serve the MCP server over stdio."""
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
-            read_stream,
-            write_stream,
-            server.create_initialization_options()
+            read_stream, write_stream, server.create_initialization_options()
         )
 
 
-def sse(host: str = 'localhost', port: int = 18080):
-    """
-    Main entry point for the MCP server using SSE transport.
-    Initializes the Bangumi client and starts the server.
-    Args:
-        host: Host to bind to.
-        port: Port to listen on.
-    """
-    sse = SseServerTransport("/messages/")
+def sse(host: str = "localhost", port: int = 18080) -> None:
+    """Serve the legacy HTTP+SSE transport (for 2025-era clients)."""
+    transport = SseServerTransport("/messages/")
 
     async def handle_sse(request: Request) -> None:
-        async with sse.connect_sse(
-                request.scope,
-                request.receive,
-                request._send,
+        async with transport.connect_sse(
+            request.scope, request.receive, request._send
         ) as (read_stream, write_stream):
             await server.run(
-                read_stream,
-                write_stream,
-                server.create_initialization_options()
+                read_stream, write_stream, server.create_initialization_options()
             )
 
     starlette_app = Starlette(
-        debug=True,
+        debug=False,
         routes=[
             Route("/sse", endpoint=handle_sse, methods=["GET"]),
-            Mount("/messages", app=sse.handle_post_message),
+            Mount("/messages", app=transport.handle_post_message),
         ],
     )
     uvicorn.run(starlette_app, host=host, port=port)
 
 
-def streamableHTTP(host: str = 'localhost', port: int = 18080):
-    """
-    Main entry point for the MCP server using Streamable HTTP transport.
-    Initializes the Bangumi client and starts the server.
-    Args:
-        host: Host to bind to.
-        port: Port to listen on.
-    """
-    session_manager = StreamableHTTPSessionManager(
-        app=server,
-        event_store=None,
-        json_response=False,
-        stateless=False
+def streamableHTTP(
+    host: str = "localhost",
+    port: int = 18080,
+    *,
+    stateless: bool = False,
+    json_response: bool = False,
+) -> None:
+    """Serve the Streamable HTTP transport (current MCP transports)."""
+    starlette_app = server.streamable_http_app(
+        streamable_http_path="/mcp",
+        json_response=json_response,
+        stateless_http=stateless,
+        host=host,
     )
-
-    async def handle_streamable_http(
-            scope: Scope, receive: Receive, send: Send
-    ) -> None:
-        await session_manager.handle_request(scope, receive, send)
-
-    @contextlib.asynccontextmanager
-    async def lifespan(app: Starlette) -> AsyncIterator[None]:
-        """Context manager for session manager."""
-        async with session_manager.run():
-            print("Application started with StreamableHTTP session manager!")
-            try:
-                yield
-            
-            finally:
-                print("Application shutting down...")
-
-    # Create an ASGI application using the transport
-    starlette_app = Starlette(
-        debug=False,
-        routes=[
-            Mount("/mcp/", app=handle_streamable_http),
-        ],
-        lifespan=lifespan,
-    )
-
-    # 3) Launch via Uvicorn
     uvicorn.run(starlette_app, host=host, port=port)

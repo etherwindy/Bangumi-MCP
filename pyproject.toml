@@ -1,6 +1,6 @@
 [project]
 name = "Bangumi-MCP"
-version = "0.1.0"
+version = "0.2.0"
 description = "MCP server for Bangumi API"
 readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
@@ -10,7 +10,8 @@ requires-python = ">=3.10"
 dependencies = [
     "httpx[socks]>=0.28.1",
     "jsonschema>=4.25.0",
-    "mcp>=1.27.2",
+    "mcp>=2.3.0,<3",
+    "pydantic>=2.12.0",
     "python-dotenv>=1.1.1",
     "starlette>=0.47.2",
     "uvicorn>=0.35.0",
