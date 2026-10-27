@@ -304,3 +304,45 @@ async def test_validation_error_is_readable() -> None:
             assert "exactly one of subject_id or episode_id" in result.content[0].text
     finally:
         await client.close()
+
+
+@pytest.mark.anyio
+async def test_network_error_becomes_readable_tool_error() -> None:
+    def network_handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    client, mcp = make_server(network_handler)
+    try:
+        async with Client(mcp) as c:
+            result = await c.call_tool("bangumi_get_calendar", {})
+            assert result.is_error is True
+            assert "Network error" in result.content[0].text
+    finally:
+        await client.close()
+
+
+@pytest.mark.anyio
+async def test_character_uncollect_explains_upstream_gap() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "DELETE" and request.url.path == "/v0/characters/1/collect":
+            return httpx.Response(
+                404,
+                json={
+                    "title": "Not Found",
+                    "details": {"path": "/v0/characters/1/collect", "method": "DELETE"},
+                    "description": "This is default response, if you see this response, please check your request",
+                },
+            )
+        raise AssertionError(f"unexpected request: {request.method} {request.url.path}")
+
+    client, mcp = make_server(handler)
+    try:
+        async with Client(mcp) as c:
+            result = await c.call_tool(
+                "bangumi_update_collection",
+                {"resource": "character", "character_id": 1, "action": "unset"},
+            )
+            assert result.is_error is True
+            assert "does not implement uncollecting characters" in result.content[0].text
+    finally:
+        await client.close()

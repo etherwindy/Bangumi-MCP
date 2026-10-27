@@ -36,8 +36,9 @@ def fail(status_code: int, payload: Any) -> NoReturn:
     details = data.get("details")
     if not description and isinstance(details, str):
         description = details
-    message = f"Bangumi API error {status_code}: {title}"
-    if description:
+    prefix = "Network error" if status_code == 0 else f"Bangumi API error {status_code}"
+    message = f"{prefix}: {title}"
+    if description and description != title:
         message += f" ({description})"
     if hint:
         message += f" Hint: {hint}"
@@ -46,7 +47,7 @@ def fail(status_code: int, payload: Any) -> NoReturn:
 
 def ensure_ok(status_code: int, payload: Any) -> Any:
     """Return the payload for a 2xx response, otherwise raise ``ToolError``."""
-    if status_code >= 400:
+    if status_code < 200 or status_code >= 300:
         fail(status_code, payload)
     return payload
 

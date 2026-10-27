@@ -83,6 +83,13 @@ All tools are annotated with `readOnlyHint`, `destructiveHint`,
 | `bangumi_manage_index` | Create/read/update indices, list/add/edit/remove index subjects, collect/uncollect an index. | `/v0/indices*` |
 | `bangumi_get_calendar` | Weekly broadcast schedule of currently airing anime. | `GET /calendar` |
 
+> Known upstream limitation: Bangumi's API advertises
+> `DELETE /v0/characters/{id}/collect` and `DELETE /v0/persons/{id}/collect`
+> but the server does not implement them
+> ([bangumi/api#234](https://github.com/bangumi/api/issues/234)).
+> `bangumi_update_collection(action="unset")` therefore returns a clear error
+> for characters and persons; uncollect them on <https://bgm.tv> for now.
+
 Image URLs are part of the subject/character/person/user payloads, so there is
 no separate image tool. `bangumi_get_subject(subject_id=..., include=[...])`
 replaces the old `get_subject_info` / `get_subject_persons` /

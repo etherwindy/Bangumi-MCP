@@ -126,3 +126,18 @@ def test_models_keep_extra_fields_and_drop_nulls() -> None:
     assert "name_cn" not in dumped
     assert "summary" not in dumped
     assert dumped["undefined_by_schema"] == {"kept": True}
+
+
+@pytest.mark.anyio
+async def test_network_error_is_reported_as_structured_error() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    client = make_client(handler)
+    try:
+        status, payload = await client.get_calendar()
+        assert status == 0
+        assert payload["title"] == "Network error"
+        assert "connection refused" in payload["description"]
+    finally:
+        await client.close()

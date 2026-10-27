@@ -180,7 +180,8 @@ def register(mcp: MCPServer, client: BangumiClient) -> None:
             "episodes watched/wish/dropped, one or many at once; "
             "`resource=character|person|index` with `action=set|unset`: collect "
             "or uncollect. Requires BANGUMI_API_TOKEN with write:collection "
-            "(or write:indices for indices)."
+            "(or write:indices for indices). Known gap: Bangumi's API does not "
+            "implement uncollecting characters or persons yet."
         ),
         annotations=DESTRUCTIVE,
     )
@@ -302,6 +303,14 @@ def register(mcp: MCPServer, client: BangumiClient) -> None:
         if entity_id is None:
             raise ToolError(f"{resource} resource requires {resource}_id")
         code, result = await (collect(entity_id) if action == "set" else uncollect(entity_id))
+        if code == 404 and action == "unset" and resource in ("character", "person"):
+            # bangumi/server comments out these DELETE routes; the OpenAPI
+            # document still advertises them. See bangumi/api#234.
+            raise ToolError(
+                f"Bangumi's public API does not implement uncollecting {resource}s yet "
+                f"(upstream bangumi/api#234). Remove the {resource} collection on "
+                "https://bgm.tv instead."
+            )
         ensure_ok(code, result)
         verb = "collected" if action == "set" else "uncollected"
         return WriteResult(

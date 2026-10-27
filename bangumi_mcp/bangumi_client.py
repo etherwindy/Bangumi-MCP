@@ -186,10 +186,26 @@ class BangumiClient:
     ) -> tuple[int, Any]:
         method = method.upper()
         last_response: Optional[httpx.Response] = None
+        last_error: Optional[httpx.TransportError] = None
         for attempt in range(self.retries + 1):
-            response = await self._send(
-                method, url, params=params, json_body=json_body, auth=True
-            )
+            try:
+                response = await self._send(
+                    method, url, params=params, json_body=json_body, auth=True
+                )
+            except httpx.TransportError as exc:
+                last_error = exc
+                if attempt == self.retries:
+                    break
+                delay = min(2.0, 0.25 * (2**attempt))
+                logger.debug(
+                    "Bangumi API %s %s failed (%s), retrying in %.2fs",
+                    method,
+                    url,
+                    type(exc).__name__,
+                    delay,
+                )
+                await asyncio.sleep(delay)
+                continue
             last_response = response
             retryable = response.status_code in _RETRY_STATUS and (
                 response.status_code == 429 or method in _SAFE_METHODS
@@ -206,7 +222,22 @@ class BangumiClient:
             )
             await asyncio.sleep(delay)
 
-        assert last_response is not None
+        if last_response is None:
+            # Connection/DNS/TLS/proxy failure after retries. Report it as a
+            # normal structured API error so the model sees a useful message.
+            message = (
+                f"{type(last_error).__name__}: {last_error}"
+                if last_error
+                else "request failed"
+            )
+            return 0, {
+                "title": "Network error",
+                "description": message,
+                "hint": (
+                    "Check network connectivity or proxy settings, then retry. "
+                    f"Endpoint: {method} {url}"
+                ),
+            }
         if last_response.status_code == 401 and self.token and public:
             # An expired/invalid token must not break public read-only data.
             logger.warning(
@@ -214,9 +245,16 @@ class BangumiClient:
                 method,
                 url,
             )
-            last_response = await self._send(
-                method, url, params=params, json_body=json_body, auth=False
-            )
+            try:
+                last_response = await self._send(
+                    method, url, params=params, json_body=json_body, auth=False
+                )
+            except httpx.TransportError as exc:
+                return 0, {
+                    "title": "Network error",
+                    "description": str(exc),
+                    "hint": f"Anonymous retry failed for {method} {url}",
+                }
         payload = _parse_json(last_response)
         if last_response.status_code >= 400:
             payload = _error_payload(
@@ -263,12 +301,19 @@ class BangumiClient:
         self, url: str, params: Optional[Dict[str, Any]] = None
     ) -> tuple[int, Any]:
         """Follow image redirects and return ``{"url": ...}``."""
-        response = await self.client.get(
-            url,
-            params=_clean_params(params),
-            headers=self._auth_headers(),
-            follow_redirects=False,
-        )
+        try:
+            response = await self.client.get(
+                url,
+                params=_clean_params(params),
+                headers=self._auth_headers(),
+                follow_redirects=False,
+            )
+        except httpx.TransportError as exc:
+            return 0, {
+                "title": "Network error",
+                "description": f"{type(exc).__name__}: {exc}",
+                "hint": f"Image request failed: {url}",
+            }
         if response.is_redirect:
             return response.status_code, {
                 "url": response.headers.get("Location", "")
