@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import Annotated, Literal
 
-from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver import Context, MCPServer
 from pydantic import Field
 
 from bangumi_mcp.bangumi_client import BangumiClient
@@ -38,6 +38,7 @@ def register(mcp: MCPServer, client: BangumiClient) -> None:
         annotations=READ_ONLY,
     )
     async def get_subject(
+        ctx: Context,
         subject_id: Annotated[int, Field(ge=1, description="Bangumi subject id")],
         include: Annotated[
             list[IncludeKind] | None,
@@ -98,8 +99,10 @@ def register(mcp: MCPServer, client: BangumiClient) -> None:
         }
         requested = [(name, loads[name]) for name in loads if name in include_set]
         if requested:
+            await ctx.report_progress(0, len(requested), "Loading related sections")
             results = await asyncio.gather(*(loader() for _, loader in requested))
             for (name, _), result in zip(requested, results):
                 setattr(detail, name, result)
+            await ctx.report_progress(len(requested), len(requested), "Done")
 
         return detail

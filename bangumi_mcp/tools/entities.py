@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import Annotated, Literal
 
-from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
@@ -38,6 +38,7 @@ def register(mcp: MCPServer, client: BangumiClient) -> None:
         annotations=READ_ONLY,
     )
     async def get_entity(
+        ctx: Context,
         entity: Annotated[
             Entity, Field(description="character = fictional character, person = real person/staff")
         ],
@@ -106,7 +107,9 @@ def register(mcp: MCPServer, client: BangumiClient) -> None:
                 tasks.append(("related_characters", load_characters))
 
         if tasks:
+            await ctx.report_progress(0, len(tasks), "Loading related sections")
             results = await asyncio.gather(*(loader() for _, loader in tasks))
             for (name, _), result in zip(tasks, results):
                 setattr(detail, name, result)
+            await ctx.report_progress(len(tasks), len(tasks), "Done")
         return detail

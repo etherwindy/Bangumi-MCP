@@ -11,9 +11,12 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
 
 from mcp.server import MCPServer
+from mcp.server.caching import CacheHint
 
 from bangumi_mcp import __version__
 from bangumi_mcp.bangumi_client import BangumiClient
+from bangumi_mcp.prompts import register as register_prompts
+from bangumi_mcp.resources import register as register_resources
 from bangumi_mcp.tools import register_all
 
 SERVER_INSTRUCTIONS = (
@@ -53,8 +56,16 @@ def create_server(client: BangumiClient | None = None) -> MCPServer:
         website_url="https://github.com/etherwindy/Bangumi-MCP",
         version=__version__,
         lifespan=lifespan,
+        cache_hints={
+            "tools/list": CacheHint(ttl_ms=3_600_000, scope="public"),
+            "resources/read": CacheHint(ttl_ms=300_000, scope="public"),
+            "resources/templates/list": CacheHint(ttl_ms=3_600_000, scope="public"),
+            "server/discover": CacheHint(ttl_ms=3_600_000, scope="public"),
+        },
     )
     register_all(mcp, client)
+    register_resources(mcp, client)
+    register_prompts(mcp)
     return mcp
 
 

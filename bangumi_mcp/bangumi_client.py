@@ -133,9 +133,6 @@ class BangumiClient:
             ),
             "Accept": "application/json",
         }
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
-
         self.client = httpx.AsyncClient(
             base_url=self.base_url,
             headers=headers,
@@ -153,9 +150,31 @@ class BangumiClient:
     async def __aexit__(self, *exc_info: Any) -> None:
         await self.close()
 
+    def _auth_headers(self) -> Dict[str, str]:
+        if not self.token:
+            return {}
+        return {"Authorization": f"Bearer {self.token}"}
+
     # ------------------------------------------------------------------
     # transport helpers
     # ------------------------------------------------------------------
+    async def _send(
+        self,
+        method: str,
+        url: str,
+        *,
+        params: Optional[Dict[str, Any]],
+        json_body: Optional[Dict[str, Any]],
+        auth: bool,
+    ) -> httpx.Response:
+        return await self.client.request(
+            method,
+            url,
+            params=_clean_params(params),
+            json=json_body,
+            headers=self._auth_headers() if auth else {},
+        )
+
     async def _request(
         self,
         method: str,
@@ -163,15 +182,13 @@ class BangumiClient:
         *,
         params: Optional[Dict[str, Any]] = None,
         json_body: Optional[Dict[str, Any]] = None,
+        public: bool = False,
     ) -> tuple[int, Any]:
         method = method.upper()
         last_response: Optional[httpx.Response] = None
         for attempt in range(self.retries + 1):
-            response = await self.client.request(
-                method,
-                url,
-                params=_clean_params(params),
-                json=json_body,
+            response = await self._send(
+                method, url, params=params, json_body=json_body, auth=True
             )
             last_response = response
             retryable = response.status_code in _RETRY_STATUS and (
@@ -190,6 +207,16 @@ class BangumiClient:
             await asyncio.sleep(delay)
 
         assert last_response is not None
+        if last_response.status_code == 401 and self.token and public:
+            # An expired/invalid token must not break public read-only data.
+            logger.warning(
+                "Bangumi API rejected BANGUMI_API_TOKEN for %s %s; retrying anonymously",
+                method,
+                url,
+            )
+            last_response = await self._send(
+                method, url, params=params, json_body=json_body, auth=False
+            )
         payload = _parse_json(last_response)
         if last_response.status_code >= 400:
             payload = _error_payload(
@@ -198,14 +225,26 @@ class BangumiClient:
         return last_response.status_code, payload
 
     async def _get(
-        self, url: str, params: Optional[Dict[str, Any]] = None
+        self,
+        url: str,
+        params: Optional[Dict[str, Any]] = None,
+        *,
+        public: bool = True,
     ) -> tuple[int, Any]:
-        return await self._request("GET", url, params=params)
+        """GET a URL. Most Bangumi GET endpoints are public; pass ``public=False``
+        for endpoints that must never be retried anonymously."""
+        return await self._request("GET", url, params=params, public=public)
 
     async def _post(
-        self, url: str, json_body: Optional[Dict[str, Any]] = None
+        self,
+        url: str,
+        json_body: Optional[Dict[str, Any]] = None,
+        *,
+        public: bool = False,
     ) -> tuple[int, Any]:
-        return await self._request("POST", url, json_body=json_body)
+        return await self._request(
+            "POST", url, json_body=json_body, public=public
+        )
 
     async def _put(
         self, url: str, json_body: Optional[Dict[str, Any]] = None
@@ -225,7 +264,10 @@ class BangumiClient:
     ) -> tuple[int, Any]:
         """Follow image redirects and return ``{"url": ...}``."""
         response = await self.client.get(
-            url, params=_clean_params(params), follow_redirects=False
+            url,
+            params=_clean_params(params),
+            headers=self._auth_headers(),
+            follow_redirects=False,
         )
         if response.is_redirect:
             return response.status_code, {
@@ -278,7 +320,7 @@ class BangumiClient:
             {"limit": params.get("limit"), "offset": params.get("offset")}
         )
         return await self._request(
-            "POST", "/v0/search/subjects", params=query, json_body=body
+            "POST", "/v0/search/subjects", params=query, json_body=body, public=True
         )
 
     async def search_characters(self, params: Dict[str, Any]) -> tuple[int, Any]:
@@ -292,7 +334,7 @@ class BangumiClient:
             {"limit": params.get("limit"), "offset": params.get("offset")}
         )
         return await self._request(
-            "POST", "/v0/search/characters", params=query, json_body=body
+            "POST", "/v0/search/characters", params=query, json_body=body, public=True
         )
 
     async def search_persons(self, params: Dict[str, Any]) -> tuple[int, Any]:
@@ -306,7 +348,7 @@ class BangumiClient:
             {"limit": params.get("limit"), "offset": params.get("offset")}
         )
         return await self._request(
-            "POST", "/v0/search/persons", params=query, json_body=body
+            "POST", "/v0/search/persons", params=query, json_body=body, public=True
         )
 
     # ------------------------------------------------------------------
@@ -427,7 +469,7 @@ class BangumiClient:
         )
 
     async def get_me_info(self) -> tuple[int, Any]:
-        return await self._get("/v0/me")
+        return await self._get("/v0/me", public=False)
 
     # ------------------------------------------------------------------
     # collections
@@ -464,7 +506,9 @@ class BangumiClient:
         if not subject_id:
             raise ValueError("subject_id must be provided")
         return await self._get(
-            f"/v0/users/-/collections/{subject_id}/episodes", params
+            f"/v0/users/-/collections/{subject_id}/episodes",
+            params,
+            public=False,
         )
 
     async def patch_my_episode_collections(
@@ -482,7 +526,7 @@ class BangumiClient:
         self, episode_id: int
     ) -> tuple[int, Any]:
         return await self._get(
-            f"/v0/users/-/collections/-/episodes/{episode_id}"
+            f"/v0/users/-/collections/-/episodes/{episode_id}", public=False
         )
 
     async def put_my_episode_collection_info(
