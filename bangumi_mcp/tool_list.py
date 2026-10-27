@@ -107,18 +107,20 @@ tool_list = [
                     },
                     "sort": {
                         "type": "string",
-                        "description": "排序方式：date=按日期排序，rank=按排名排序",
+                        "enum": ["match", "heat", "rank", "score"],
+                        "description": "排序方式：match=按匹配度，heat=按收藏人数，rank=按排名，score=按评分",
                         "default": None
                     },
                     "filter": {
                         "type": "object",
-                        "description": "过滤条件，没有则不使用",
+                        "description": "过滤条件，没有则不使用；不同条件之间为且关系",
                         "properties": {
                             "type": {
                                 "type": "array",
-                                "description": "条目类型过滤，1=书籍，2=动画，3=音乐，4=游戏，6=三次元，没有5",
+                                "description": "条目类型过滤，1=书籍，2=动画，3=音乐，4=游戏，6=三次元，没有5；多值之间为或关系",
                                 "items": {
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "enum": [1, 2, 3, 4, 6]
                                 }
                             },
                             "meta_tags": {
@@ -128,9 +130,9 @@ tool_list = [
                                     "type": "string"
                                 }
                             },
-                            "tags": {
+                            "tag": {
                                 "type": "array",
-                                "description": "标签过滤",
+                                "description": "标签过滤，多值之间为且关系，可用 -标签 排除",
                                 "items": {
                                     "type": "string"
                                 }
@@ -144,7 +146,14 @@ tool_list = [
                             },
                             "rating": {
                                 "type": "array",
-                                "description": "评分范围过滤，格式为 > / < / =< / >= 分数，例如 '>8, <=9'",
+                                "description": "评分范围过滤，格式为 > / < / =< / >= 分数，例如 ['>=8', '<9']",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "rating_count": {
+                                "type": "array",
+                                "description": "按评分人数过滤，格式与 rating 相同，例如 ['>=200', '<5000']",
                                 "items": {
                                     "type": "string"
                                 }
@@ -158,8 +167,7 @@ tool_list = [
                             },
                             "nsfw": {
                                 "type": "boolean",
-                                "description": "是否包含NSFW内容，默认 False（不包含）",
-                                "default": False
+                                "description": "NSFW 过滤：不传/None=同时返回 NSFW 与非 NSFW，true=仅 NSFW，false=仅非 NSFW；无权限时该字段被忽略"
                             }
                         },
                         "default": {}
@@ -187,8 +195,8 @@ tool_list = [
                 "properties": {
                     "type": {
                         "type": "integer",
-                        "description": "条目类型：1=书籍，2=动画，3=音乐，4=游戏，6=三次元，没有5",
-                        "default": None
+                        "enum": [1, 2, 3, 4, 6],
+                        "description": "条目类型（必填）：1=书籍，2=动画，3=音乐，4=游戏，6=三次元，没有5"
                     },
                     "cat": {
                         "type": "integer",
@@ -211,9 +219,8 @@ tool_list = [
                     },
                     "sort": {
                         "type": "string",
-                        "description": "排序方式：\n"
-                        "date=按日期排序，rank=按排名排序\n"
-                        "默认 None（不排序）",
+                        "enum": ["date", "rank"],
+                        "description": "排序方式：date=按日期排序，rank=按排名排序；不传则不排序",
                         "default": None
                     },
                     "year": {
@@ -226,22 +233,21 @@ tool_list = [
                         "description": "月份过滤，1-12",
                         "default": None
                     },
-                    "day": {
-                        "type": "integer",
-                        "description": "日期过滤，1-31",
-                        "default": None
-                    },
                     "limit": {
                         "type": "integer",
-                        "description": "返回结果数量限制",
-                        "default": 30
+                        "description": "返回结果数量限制，最大50",
+                        "default": 30,
+                        "maximum": 50,
+                        "minimum": 1
                     },
                     "offset": {
                         "type": "integer",
                         "description": "分页偏移量",
-                        "default": 0
+                        "default": 0,
+                        "minimum": 0
                     }
-                }
+                },
+                "required": ["type"]
             },
             outputSchema={
                 "type": "object",
@@ -390,13 +396,16 @@ tool_list = [
                     },
                     "type": {
                         "type": "integer",
+                        "enum": [0, 1, 2, 3, 4, 5, 6],
                         "description": "集数类型：0=本篇，1=特别篇，2=OP, 3=ED，4=预告/宣传/广告，5=MAD，6=其他",
                         "default": None
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "返回结果数量限制",
-                        "default": 30
+                        "description": "返回结果数量限制，最大200",
+                        "default": 100,
+                        "maximum": 200,
+                        "minimum": 1
                     },
                     "offset": {
                         "type": "integer",
