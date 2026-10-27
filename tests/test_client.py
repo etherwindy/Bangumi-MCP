@@ -141,3 +141,38 @@ async def test_network_error_is_reported_as_structured_error() -> None:
         assert "connection refused" in payload["description"]
     finally:
         await client.close()
+
+
+@pytest.mark.anyio
+async def test_post_index_sends_json_object_body() -> None:
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["method"] = request.method
+        captured["path"] = request.url.path
+        captured["body"] = json_body(request)
+        captured["content_type"] = request.headers.get("Content-Type")
+        return httpx.Response(
+            200,
+            json={
+                "id": 105410,
+                "title": "",
+                "desc": "",
+                "total": 0,
+                "creator": {"username": "tester", "nickname": "tester"},
+            },
+        )
+
+    client = make_client(handler)
+    try:
+        status, payload = await client.post_index()
+        assert status == 200
+        assert captured == {
+            "method": "POST",
+            "path": "/v0/indices",
+            "body": {},
+            "content_type": "application/json",
+        }
+        assert payload["id"] == 105410
+    finally:
+        await client.close()

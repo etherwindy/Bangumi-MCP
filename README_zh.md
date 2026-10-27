@@ -77,6 +77,9 @@ BANGUMI_API_TOKEN=your_api_token_here
 | `bangumi_manage_index` | 创建/读取/更新目录，列出/添加/修改/删除目录条目，收藏/取消收藏目录。 | `/v0/indices*` |
 | `bangumi_get_calendar` | 每周放送时间表。 | `GET /calendar` |
 
+> API 没有删除目录的接口。通过
+> `bangumi_manage_index(action="create")` 创建的目录需要到 bgm.tv 网页端删除。
+>
 > 已知上游限制：Bangumi API 文档中声明了
 > `DELETE /v0/characters/{id}/collect` 和 `DELETE /v0/persons/{id}/collect`，
 > 但服务端尚未实现

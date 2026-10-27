@@ -167,12 +167,15 @@ class BangumiClient:
         json_body: Optional[Dict[str, Any]],
         auth: bool,
     ) -> httpx.Response:
+        headers = self._auth_headers() if auth else {}
+        if json_body is not None:
+            headers["Content-Type"] = "application/json"
         return await self.client.request(
             method,
             url,
             params=_clean_params(params),
             json=json_body,
-            headers=self._auth_headers() if auth else {},
+            headers=headers,
         )
 
     async def _request(
@@ -654,7 +657,9 @@ class BangumiClient:
     # indices
     # ------------------------------------------------------------------
     async def post_index(self) -> tuple[int, Any]:
-        return await self._post("/v0/indices")
+        # The endpoint takes no documented body, but the server requires a
+        # decodable JSON body; an empty object is the accepted form.
+        return await self._post("/v0/indices", {})
 
     async def get_index_info(self, index_id: int) -> tuple[int, Any]:
         return await self._get(f"/v0/indices/{index_id}")

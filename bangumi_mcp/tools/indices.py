@@ -36,7 +36,9 @@ def register(mcp: MCPServer, client: BangumiClient) -> None:
             "read, rename, add/edit/remove subjects, list subjects and "
             "collect/uncollect. Every action takes `index_id` except `create`; "
             "adding or editing subjects takes `subject_id`. Index edits require "
-            "write:indices; collecting an index requires write:collection."
+            "write:indices; collecting an index requires write:collection. "
+            "Note: the API has no delete-index endpoint, so created indices must "
+            "be removed on bgm.tv."
         ),
         annotations=DESTRUCTIVE,
     )

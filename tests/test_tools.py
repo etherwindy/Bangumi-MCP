@@ -346,3 +346,45 @@ async def test_character_uncollect_explains_upstream_gap() -> None:
             assert "does not implement uncollecting characters" in result.content[0].text
     finally:
         await client.close()
+
+
+@pytest.mark.anyio
+async def test_manage_index_create_flow() -> None:
+    created = {"id": 105410, "title": "", "desc": "", "total": 0}
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path == "/v0/indices":
+            assert json_body(request) == {}
+            return httpx.Response(200, json=created)
+        if request.method == "PUT" and request.url.path == "/v0/indices/105410":
+            captured.update(json_body(request))
+            return httpx.Response(204)
+        if request.method == "GET" and request.url.path == "/v0/indices/105410":
+            return httpx.Response(
+                200,
+                json={**created, "title": captured.get("title", ""), "desc": captured.get("description", "")},
+            )
+        raise AssertionError(f"unexpected request: {request.method} {request.url.path}")
+
+    client, mcp = make_server(handler)
+    try:
+        async with Client(mcp) as c:
+            result = await c.call_tool(
+                "bangumi_manage_index",
+                {
+                    "action": "create",
+                    "title": "Bangumi-MCP write:indices test (safe to delete)",
+                    "description": "temporary",
+                },
+            )
+            assert result.is_error is False
+            index = result.structured_content["index"]
+            assert index["id"] == 105410
+            assert index["title"] == "Bangumi-MCP write:indices test (safe to delete)"
+            assert captured == {
+                "title": "Bangumi-MCP write:indices test (safe to delete)",
+                "description": "temporary",
+            }
+    finally:
+        await client.close()

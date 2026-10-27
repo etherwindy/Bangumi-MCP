@@ -83,6 +83,9 @@ All tools are annotated with `readOnlyHint`, `destructiveHint`,
 | `bangumi_manage_index` | Create/read/update indices, list/add/edit/remove index subjects, collect/uncollect an index. | `/v0/indices*` |
 | `bangumi_get_calendar` | Weekly broadcast schedule of currently airing anime. | `GET /calendar` |
 
+> The API has no endpoint for deleting an index. Indices created with
+> `bangumi_manage_index(action="create")` must be removed on bgm.tv.
+>
 > Known upstream limitation: Bangumi's API advertises
 > `DELETE /v0/characters/{id}/collect` and `DELETE /v0/persons/{id}/collect`
 > but the server does not implement them
